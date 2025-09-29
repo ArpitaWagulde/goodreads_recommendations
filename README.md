@@ -16,7 +16,7 @@ This project builds a machine learning-based book recommendation system using Go
 
 ## 📄 Data Sources
 
-- **Goodreads Dataset:** Books, ratings, and metadata from the [Goodbooks-10k dataset]()
+- **Goodreads Dataset:** Books, ratings, and metadata from the [Goodbooks dataset](https://cseweb.ucsd.edu/~jmcauley/datasets/goodreads.html)
 - Additional sources (if any) can be added under `data/external/`
 
 ## 🚀 Getting Started
@@ -27,7 +27,6 @@ This project builds a machine learning-based book recommendation system using Go
 git clone https://github.com/purva-agarwal/goodreads_recommendations.git
 cd goodreads_recommendations
 ```
-
 ### 2. Set up Python Environment
 
 ```bash
@@ -38,13 +37,13 @@ source .venv/bin/activate     # macOS/Linux
 .venv\Scripts\activate        # Windows
 
 # Install dependencies
-pip install -r requirements.txt
+
 ```
 
 ### 3. Run Training Pipeline
 
 ```bash
-python 
+
 ```
 
 This will load the data, clean it, engineer features, train a model, and save it to the `models/` directory.
@@ -54,7 +53,7 @@ This will load the data, clean it, engineer features, train a model, and save it
 #### Locally (for development):
 
 ```bash
-python serving/app.py
+
 ```
 
 Visit: [http://localhost:8000/docs](http://localhost:8000/docs) to test the API using Swagger UI.
@@ -62,8 +61,7 @@ Visit: [http://localhost:8000/docs](http://localhost:8000/docs) to test the API 
 #### Or via Docker:
 
 ```bash
-docker build 
-docker run
+
 ```
 
 ## 🐳 Using Docker
@@ -71,18 +69,18 @@ docker run
 ### Build the Docker Image
 
 ```bash
-docker build
+
 ```
 
 ### Run the Docker Container
 
 ```bash
-docker run 
+
 ```
 
 ### Access the API
 
-Open in browser: [http://localhost:8000/docs](http://localhost:8000/docs)
+Open in browser:
 
 ## ✅ Features
 
@@ -98,7 +96,7 @@ Open in browser: [http://localhost:8000/docs](http://localhost:8000/docs)
 Run unit tests using:
 
 ```bash
-pytest tests/
+
 ```
 
 Make sure you activate your virtual environment first.
@@ -107,9 +105,6 @@ Make sure you activate your virtual environment first.
 
 | Folder/File         | Description                                                                 |
 |---------------------|-----------------------------------------------------------------------------|
-| `data/`             | Local datasets                                                              |
-| ├── `raw/`          | Raw Goodreads data                                                          |
-| └── `processed/`    | Cleaned and transformed data used for modeling                              |
 | `notebooks/`        | Jupyter notebooks for exploration and prototyping                           |
 | `src/`              | Source code (data processing, feature engineering, modeling, recommendation)|
 | `pipeline/`         | ML pipeline orchestration (e.g., Prefect, MLflow)                           |

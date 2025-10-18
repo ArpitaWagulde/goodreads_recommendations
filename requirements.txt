@@ -1,5 +1,9 @@
 google-cloud-bigquery
+google-cloud-storage
 google-cloud-bigquery-storage
 pandas
 pyarrow
 db-dtypes
+matplotlib
+seaborn
+jupyter

@@ -1,1 +1,3 @@
-data/
+venv/
+**/gcp_credentials.json
+*pycache*

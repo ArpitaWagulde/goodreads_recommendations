@@ -31,22 +31,47 @@ cd goodreads_recommendations
 
 ```bash
 # Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate     # macOS/Linux
+python3 -m venv venv
+source venv/bin/activate     # macOS/Linux
 # OR
-.venv\Scripts\activate        # Windows
+venv\Scripts\activate        # Windows
 
 # Install dependencies
+pip install -r requirements.txt
 
 ```
 
 ### 3. Run Training Pipeline
 
+Set the following environment variables from terminal.
+The variable set is only for this instance of terminal and will not affect others.
 ```bash
-
+export AIRFLOW_HOME=. [point this to the absolute path of config folder of the cloned repository]
 ```
 
-This will load the data, clean it, engineer features, train a model, and save it to the `models/` directory.
+Request access to gcp credentials [Access credentials will be shared per user basis].
+
+Place the access credentials in config folder as gcp_credentials.json
+
+```bash
+airflow standalone
+```
+
+**Access the Airflow UI:**
+A login password for the admin user will be shown in the terminal or in
+config/simple_auth_manager_passwords.json.generated
+
+Open your browser and go to:
+
+http://localhost:8080
+
+Login using the admin credentials
+
+**Run the DAG:**
+
+1. In the Airflow UI, search for titanic_pipeline DAG
+2. Click trigger DAG to start execution.
+
 
 ### 4. Start the Recommendation API
 

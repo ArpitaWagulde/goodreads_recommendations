@@ -81,11 +81,11 @@ def clean_goodreads_df_parallel(df: pd.DataFrame, save=True, out_dir="../data/pr
 
     try:
         with ProcessPoolExecutor() as executor:
-            for result in tqdm(executor.map(clean_column, columns), total=len(columns), desc="🧹 Cleaning columns"):
+            for result in tqdm(executor.map(clean_column, columns), total=len(columns), desc=" Cleaning columns"):
                 cleaned.append(result)
     except Exception as e:
-        logging.warning(f"⚠️ Parallel cleaning failed: {e}. Falling back to sequential mode.")
-        cleaned = [clean_column(c) for c in tqdm(columns, desc="🧹 Sequential cleaning")]
+        logging.warning(f" Parallel cleaning failed: {e}. Falling back to sequential mode.")
+        cleaned = [clean_column(c) for c in tqdm(columns, desc="Sequential cleaning")]
 
     for col_name, col_data, col_flat in cleaned:
         df[col_name] = col_data
@@ -96,12 +96,12 @@ def clean_goodreads_df_parallel(df: pd.DataFrame, save=True, out_dir="../data/pr
         os.makedirs(out_dir, exist_ok=True)
         file_path = os.path.join(out_dir, file_name)
         df.to_parquet(file_path, engine="pyarrow", index=False)
-        logging.info(f"✅ Cleaned data saved to {file_path}")
+        logging.info(f" Cleaned data saved to {file_path}")
 
         # Save schema snapshot
         schema_path = os.path.join(out_dir, f"{file_name}_schema.json")
         schema_info = {col: str(df[col].dtype) for col in df.columns}
         pd.Series(schema_info).to_json(schema_path, indent=2)
-        logging.info(f"📄 Schema saved to {schema_path}")
+        logging.info(f" Schema saved to {schema_path}")
 
     return df

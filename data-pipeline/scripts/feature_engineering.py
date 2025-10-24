@@ -6,34 +6,34 @@ from google.cloud import bigquery
 from datetime import datetime
 import pandas as pd
 
-# 1️⃣ Logging setup
+# Logging setup
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# 2️⃣ GCP credentials
+# GCP credentials
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp_credentials.json"
 
-# 3️⃣ BigQuery client and configuration
+# BigQuery client and configuration
 project_id = "recommendation-system-475301"
 dataset_id = "books"
 client = bigquery.Client(project=project_id)
 
-# 4️⃣ Source and destination tables
+# Source and destination tables
 books_table = f"{project_id}.{dataset_id}.goodreads_books_cleaned"
 interactions_table = f"{project_id}.{dataset_id}.goodreads_interactions_cleaned"
 destination_table = f"{project_id}.{dataset_id}.goodreads_features_cleaned"
 
-# 5️⃣ Feature engineering parameters
+# Feature engineering parameters
 MIN_READING_DAYS = 1
 MAX_READING_DAYS = 365
 DEFAULT_PAGE_COUNT = 300
 DEFAULT_READING_DAYS = 14
 
 
-# 6️⃣ Main feature engineering function
+# Main feature engineering function
 def create_features():
     try:
         logger.info(f"Starting feature engineering pipeline")
@@ -323,14 +323,14 @@ def create_features():
         logger.info("Executing feature engineering query...")
         query_job = client.query(query, job_config=job_config)
         query_job.result()
-        logger.info(f"✅ Features table successfully created: {destination_table}")
+        logger.info(f" Features table successfully created: {destination_table}")
 
     except Exception as e:
         logger.error(f"Error in feature engineering: {e}", exc_info=True)
         raise
 
 
-# 7️⃣ Function to get table statistics
+# Function to get table statistics
 def get_table_stats():
     try:
         logger.info("Gathering table statistics...")
@@ -347,7 +347,7 @@ def get_table_stats():
         """
 
         stats = client.query(stats_query).to_dataframe()
-        logger.info("📊 Table Statistics:")
+        logger.info(" Table Statistics:")
         logger.info(f"Total rows: {stats['total_rows'].iloc[0]:,}")
         logger.info(f"Unique users: {stats['unique_users'].iloc[0]:,}")
         logger.info(f"Unique books: {stats['unique_books'].iloc[0]:,}")
@@ -360,7 +360,7 @@ def get_table_stats():
         logger.error(f"Error getting table stats: {e}", exc_info=True)
 
 
-# 8️⃣ Function to export sample data
+# Function to export sample data
 def export_sample(sample_size=1000):
     try:
         logger.info(f"Exporting sample of {sample_size} rows...")
@@ -381,7 +381,7 @@ def export_sample(sample_size=1000):
         output_path = f"data/features_sample_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
         sample_df.to_parquet(output_path, index=False)
 
-        logger.info(f"✅ Sample saved to {output_path}")
+        logger.info(f" Sample saved to {output_path}")
         logger.info(f"   Shape: {sample_df.shape}")
 
         # Show sample
@@ -394,7 +394,7 @@ def export_sample(sample_size=1000):
         logger.error(f"Error exporting sample: {e}", exc_info=True)
 
 
-# 9️⃣ Main execution
+# Main execution
 if __name__ == "__main__":
     logger.info("=" * 60)
     logger.info("GOODREADS FEATURE ENGINEERING PIPELINE")

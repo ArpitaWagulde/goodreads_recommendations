@@ -67,9 +67,15 @@ http://localhost:8080
 
 Login using the admin credentials
 
+**Add Connection on Airflow UI:**
+1. Admin >> Connections
+2. Add Connection
+3. Connection ID : goodreads_conn ,  Connection Type : Google Cloud
+4. Paste the shared GCP access credentials json at Extra Fields JSON
+
 **Run the DAG:**
 
-1. In the Airflow UI, search for titanic_pipeline DAG
+1. In the Airflow UI, search for goodreads_recommendation_pipeline DAG
 2. Click trigger DAG to start execution.
 
 

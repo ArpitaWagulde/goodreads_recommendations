@@ -95,7 +95,7 @@ class DataCleaning:
                 write_disposition="WRITE_TRUNCATE"
             )
             self.client.query(query, job_config=job_config).result()
-            self.logger.info(f"✅ Cleaned table saved: {destination_table}")
+            self.logger.info(f" Cleaned table saved: {destination_table}")
 
         except Exception as e:
             self.logger.error(f"Error cleaning table {dataset_id}.{table_name}: {e}", exc_info=True)

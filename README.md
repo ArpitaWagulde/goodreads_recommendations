@@ -1,32 +1,35 @@
-# 📚 Book Recommendation System (Goodreads + MLOps)
+# Book Recommendation System (Goodreads + MLOps)
 
-This project builds a machine learning-based book recommendation system using Goodreads data, with an end-to-end MLOps-ready architecture. It includes data processing, model training, recommendation logic, an API for serving, and Docker for containerization.
+This project builds a machine learning-based book recommendation system using Goodreads data, with an end-to-end MLOps-ready architecture. It includes data processing, model training, recommendation logic, an API for serving and Docker for containerization.
 
-## 🙋‍♂️ Team Members
+## Team Members
 
-- Purva Agarwal  
-- Ananya Asthana  
+- Ananya Asthana
+- Arpita Wagulde  
 - Karan Goyal  
+- Purva Agarwal  
 - Shivam Sah  
 - Shivani Sharma  
-- Arpita Wagulde
-
-## 🏗️ Project Architecture Overview
 
 
-## 📄 Data Sources
+## Project Architecture Overview
+
+(Include a diagram or description of the architecture here)
+
+## Data Sources
 
 - **Goodreads Dataset:** Books, ratings, and metadata from the [Goodbooks dataset](https://cseweb.ucsd.edu/~jmcauley/datasets/goodreads.html)
-- Additional sources (if any) can be added under `data/external/`
 
-## 🚀 Getting Started
 
-### 1. Clone the repo
+## Getting Started
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/purva-agarwal/goodreads_recommendations.git
 cd goodreads_recommendations
 ```
+
 ### 2. Set up Python Environment
 
 ```bash
@@ -38,20 +41,31 @@ venv\Scripts\activate        # Windows
 
 # Install dependencies
 pip install -r requirements.txt
-
 ```
 
 ### 3. Run Training Pipeline
 
-Set the following environment variables from terminal.
+- Set the following environment variables from terminal.
 The variable set is only for this instance of terminal and will not affect others.
 ```bash
 export AIRFLOW_HOME=. [point this to the absolute path of config folder of the cloned repository]
 ```
 
-Request access to gcp credentials [Access credentials will be shared per user basis].
+- Request access to gcp credentials [Access credentials will be shared per user basis].
 
-Place the access credentials in config folder as gcp_credentials.json
+- Place the access credentials in config folder as gcp_credentials.json
+
+- Replace paths in airflow.cfg for:
+
+    - dags_folder
+
+    - plugins_folder
+
+    - sql_alchemy_conn
+
+    - base_log_folder
+
+    - dag_processor_child_process_log_directory
 
 ```bash
 airflow standalone
@@ -95,7 +109,7 @@ Visit: [http://localhost:8000/docs](http://localhost:8000/docs) to test the API 
 
 ```
 
-## 🐳 Using Docker
+## Using Docker
 
 ### Build the Docker Image
 
@@ -113,16 +127,16 @@ Visit: [http://localhost:8000/docs](http://localhost:8000/docs) to test the API 
 
 Open in browser:
 
-## ✅ Features
+## Features
 
-- ✅ Clean and structured Goodreads data pipeline
-- ✅ Feature engineering using TF-IDF, embeddings, and more
-- ✅ Book recommendation logic (collaborative & content-based filtering)
-- ✅ Model training and evaluation
-- ✅ Model serving via FastAPI
-- ✅ Containerized with Docker for portability and deployment
+- Clean and structured Goodreads data pipeline
+- Feature engineering using TF-IDF, embeddings, and more
+- Book recommendation logic (collaborative & content-based filtering)
+- Model training and evaluation
+- Model serving via FastAPI
+- Containerized with Docker for portability and deployment
 
-## 🧪 Testing
+## Testing
 
 Run unit tests using:
 
@@ -132,7 +146,7 @@ Run unit tests using:
 
 Make sure you activate your virtual environment first.
 
-## 📁 Folder Structure
+## Folder Structure
 
 | Folder/File         | Description                                                                 |
 |---------------------|-----------------------------------------------------------------------------|
@@ -148,11 +162,11 @@ Make sure you activate your virtual environment first.
 | `.gitignore`        | Files/folders to exclude from version control                               |
 | `README.md`         | Project overview and usage instructions                                     |
 
-## 📄 License
+## License
 
 This project is for educational purpose.
 
-## 🙋‍♀️ Contact
+## Contact
 
 For questions, issues, or contributions, feel free to open a GitHub Issue or Pull Request.
 

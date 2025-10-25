@@ -347,7 +347,7 @@ class FeatureEngineering:
             """
 
             stats = self.client.query(stats_query).to_dataframe(create_bqstorage_client=False)
-            self.logger.info("📊 Table Statistics:")
+            self.logger.info("Table Statistics:")
             self.logger.info(f"Total rows: {stats['total_rows'].iloc[0]:,}")
             self.logger.info(f"Unique users: {stats['unique_users'].iloc[0]:,}")
             self.logger.info(f"Unique books: {stats['unique_books'].iloc[0]:,}")
@@ -411,8 +411,9 @@ class FeatureEngineering:
 
 
 def main():
-    feature_engineer = FeatureEngineering()
-    feature_engineer.main_runner()
+    # feature_engineer = FeatureEngineering()
+    # feature_engineer.main_runner()
+    print("TEST COMMENT")
 
 
 if __name__ == "__main__":

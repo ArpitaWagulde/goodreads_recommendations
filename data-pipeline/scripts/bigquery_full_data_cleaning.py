@@ -136,8 +136,9 @@ class DataCleaning:
             print("Books sample:")
 
 def main():
-    data_cleaner = DataCleaning()
-    data_cleaner.main_runner()
+    # data_cleaner = DataCleaning()
+    # data_cleaner.main_runner()
+    print("TEST COMMENT")
 
 if __name__ == "__main__":
     main()

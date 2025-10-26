@@ -3,6 +3,9 @@
 import os
 import logging
 from google.cloud import bigquery
+from logger_setup import get_logger
+import time
+from datetime import datetime
 
 class DataCleaning:
     
@@ -11,11 +14,7 @@ class DataCleaning:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("AIRFLOW_HOME")+"/gcp_credentials.json"
         
         # Logging configuration
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s [%(levelname)s] %(message)s'
-        )
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger("data_cleaning")
 
         self.median_numeric_cols = ["publication_year", "num_pages"]
 
@@ -102,7 +101,11 @@ class DataCleaning:
 
     def main_runner(self):
         # Clean books and interactions tables
-
+        self.logger.info("=" * 60)
+        self.logger.info("Good Reads Data Cleaning Pipeline")
+        start_time = time.time()
+        self.logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.info("=" * 60)
         self.clean_table(
             dataset_id="books",
             table_name="goodreads_books_mystery_thriller_crime",
@@ -134,10 +137,15 @@ class DataCleaning:
         except Exception as e:
             self.logger.error(f"Error fetching sample data: {e}", exc_info=True)
             print("Books sample:")
+        end_time = time.time()
+        self.logger.info("=" * 60)
+        self.logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.info(f"Total runtime: {(end_time - start_time):.2f} seconds")
+        self.logger.info("=" * 60)
 
 def main():
-    # data_cleaner = DataCleaning()
-    # data_cleaner.main_runner()
+    data_cleaner = DataCleaning()
+    data_cleaner.main_runner()
     print("TEST COMMENT")
 
 if __name__ == "__main__":

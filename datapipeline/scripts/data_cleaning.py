@@ -142,9 +142,8 @@ class DataCleaning:
         self.logger.info("=" * 60)
 
 def main():
-    # data_cleaner = DataCleaning()
-    # data_cleaner.run()
-    print("TEST COMMENT")
+    data_cleaner = DataCleaning()
+    data_cleaner.run()
 
 if __name__ == "__main__":
     main()

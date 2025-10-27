@@ -427,9 +427,8 @@ class FeatureEngineering:
 
 
 def main():
-    # feature_engineer = FeatureEngineering()
-    # feature_engineer.run()
-    print("TEST COMMENT")
+    feature_engineer = FeatureEngineering()
+    feature_engineer.run()
 
 
 if __name__ == "__main__":

@@ -114,10 +114,8 @@ class GoodreadsNormalization:
 
 
 def main():
-    # normalizer = GoodreadsNormalization()
-    # normalizer.run()
-    print("TEST COMMENT")
-
+    normalizer = GoodreadsNormalization()
+    normalizer.run()
 
 if __name__ == "__main__":
     main()

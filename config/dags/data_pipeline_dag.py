@@ -79,7 +79,15 @@ with DAG(
         configuration={
             "query": {
                 "query": """
-                    SELECT * FROM `recommendation-system-475301.books.goodreads_interactions_mystery_thriller_crime` LIMIT 10
+                    SELECT 
+                        'books' as table_type,
+                        COUNT(*) as record_count
+                    FROM `recommendation-system-475301.books.goodreads_books_mystery_thriller_crime`
+                    UNION ALL
+                    SELECT 
+                        'interactions' as table_type,
+                        COUNT(*) as record_count
+                    FROM `recommendation-system-475301.books.goodreads_interactions_mystery_thriller_crime`
                 """,
                 "useLegacySql": False,
             }
@@ -91,11 +99,37 @@ with DAG(
         task_id='log_bq_results',
         python_callable=log_query_results,
     )
+    
+     data_validation_task = PythonOperator(
+        task_id='validate_data_quality',
+        python_callable=anomaly_detection_main,
+        doc_md="""
+        ## Data Validation Task
+        Simple data quality checks:
+        - Required columns exist
+        - Data ranges are valid
+        - Missing values within limits
+        - Stops pipeline if critical issues found
+        """
+    )
 
     data_cleaning_task = PythonOperator(
         task_id='clean_data',
         python_callable=data_cleaning_main,
     )
+    
+     post_cleaning_validation_task = PythonOperator(
+        task_id='validate_cleaned_data',
+        python_callable=anomaly_detection_main,
+        doc_md="""
+        ## Post-Cleaning Validation Task
+        Validates data quality after cleaning:
+        - Ensures cleaning process worked correctly
+        - Checks for any new data quality issues
+        - Validates cleaned data meets requirements
+        """
+    )
+     
     feature_engg_task = PythonOperator(
         task_id='feature_engg_data',
         python_callable=feature_engg_main,
@@ -107,4 +141,4 @@ with DAG(
 
     end = EmptyOperator(task_id='end')
 
-    start >> data_reading_task >> log_results_task >> data_cleaning_task >> feature_engg_task >> normalization_task >> end
+    start >> data_reading_task >> log_results_task >> data_validation_task >> data_cleaning_task >> post_cleaning_validation_task >> feature_engg_task >> normalization_task >> end

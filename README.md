@@ -41,6 +41,7 @@ venv\Scripts\activate        # Windows
 
 # Install dependencies
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ### 3. Run Training Pipeline
@@ -54,18 +55,6 @@ export AIRFLOW_HOME=. [point this to the absolute path of config folder of the c
 - Request access to gcp credentials [Access credentials will be shared per user basis].
 
 - Place the access credentials in config folder as gcp_credentials.json
-
-- Replace paths in airflow.cfg for:
-
-    - dags_folder
-
-    - plugins_folder
-
-    - sql_alchemy_conn
-
-    - base_log_folder
-
-    - dag_processor_child_process_log_directory
 
 ```bash
 airflow standalone

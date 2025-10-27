@@ -1,0 +1,105 @@
+2025-10-27 16:09:50,784 [INFO] data_cleaning: ============================================================
+2025-10-27 16:09:50,784 [INFO] data_cleaning: Good Reads Data Cleaning Pipeline
+2025-10-27 16:09:50,784 [INFO] data_cleaning: Started at: 2025-10-27 16:09:50
+2025-10-27 16:09:50,784 [INFO] data_cleaning: ============================================================
+2025-10-27 16:09:50,784 [INFO] data_cleaning: Starting cleaning for table: books.goodreads_books_mystery_thriller_crime
+2025-10-27 16:09:52,179 [INFO] data_cleaning: Retrieved 29 columns for table goodreads_books_mystery_thriller_crime
+2025-10-27 16:09:52,185 [INFO] data_cleaning: Executing cleaning query for goodreads_books_mystery_thriller_crime...
+2025-10-27 16:10:11,756 [INFO] data_cleaning:  Cleaned table saved: recommendation-system-475301.books.goodreads_books_cleaned
+2025-10-27 16:10:11,758 [INFO] data_cleaning: Starting cleaning for table: books.goodreads_interactions_mystery_thriller_crime
+2025-10-27 16:10:12,672 [INFO] data_cleaning: Retrieved 10 columns for table goodreads_interactions_mystery_thriller_crime
+2025-10-27 16:10:12,675 [INFO] data_cleaning: Executing cleaning query for goodreads_interactions_mystery_thriller_crime...
+2025-10-27 16:10:22,730 [INFO] data_cleaning:  Cleaned table saved: recommendation-system-475301.books.goodreads_interactions_cleaned
+2025-10-27 16:10:24,756 [INFO] data_cleaning: Books sample:
+2025-10-27 16:10:24,757 [INFO] data_cleaning: 
+                          title_without_series_clean  ...  isbn_clean
+0          Blood Relative: Portrait of a Mass Murder  ...  0929387910
+1                   The First Law (Dismas Hardy, #9)  ...  0525947051
+2  Samariter Ohne Herz: Petra Delicado Löst Ihren...  ...  3404922468
+3                                          The Twins  ...     Unknown
+4            Invitation to Die (The Killing Game #1)  ...     Unknown
+
+[5 rows x 29 columns]
+2025-10-27 16:10:24,811 [INFO] data_cleaning: Interactions sample:
+2025-10-27 16:10:24,811 [INFO] data_cleaning: 
+                 started_at_clean  ...                     user_id_clean
+0  Fri Apr 11 00:00:00 -0700 2014  ...  4d8ff5fabbf1e8eb026c17cdadb43f08
+1  Sun Jul 28 20:35:54 -0700 2013  ...  ba5223f05dc0d3a058be46cd39c40ad7
+2  Mon Aug 28 09:24:15 -0700 2017  ...  e56d817309d24929223fd9093f195bdf
+3  Thu Jun 08 00:00:00 -0700 2017  ...  0006e2314bb4ad77814556b828924cfa
+4  Mon Dec 24 20:00:49 -0800 2012  ...  d23afe8ae70683334334801dd61eb17d
+
+[5 rows x 10 columns]
+2025-10-27 16:10:24,818 [INFO] data_cleaning: Starting gender mapping for authors...
+2025-10-27 16:10:29,607 [INFO] data_cleaning: Retrieved 829529 author rows.
+2025-10-27 16:10:32,151 [ERROR] data_cleaning: Error creating author gender map: Missing optional dependency 'pandas-gbq'. pandas-gbq is required to load data from Google BigQuery. See the docs: https://pandas-gbq.readthedocs.io. Use pip or conda to install pandas-gbq.
+Traceback (most recent call last):
+  File "/Library/Python/3.9/site-packages/pandas/compat/_optional.py", line 135, in import_optional_dependency
+    module = importlib.import_module(name)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 984, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'pandas_gbq'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/ananyaasthana/Desktop/Study/MLOps/Project/goodreads_recommendations/datapipeline/scripts/data_cleaning.py", line 180, in create_author_gender_map
+    authors_df.to_gbq(
+  File "/Library/Python/3.9/site-packages/pandas/util/_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+  File "/Library/Python/3.9/site-packages/pandas/core/frame.py", line 2304, in to_gbq
+    gbq.to_gbq(
+  File "/Library/Python/3.9/site-packages/pandas/io/gbq.py", line 242, in to_gbq
+    pandas_gbq = _try_import()
+  File "/Library/Python/3.9/site-packages/pandas/io/gbq.py", line 26, in _try_import
+    pandas_gbq = import_optional_dependency("pandas_gbq", extra=msg)
+  File "/Library/Python/3.9/site-packages/pandas/compat/_optional.py", line 138, in import_optional_dependency
+    raise ImportError(msg)
+ImportError: Missing optional dependency 'pandas-gbq'. pandas-gbq is required to load data from Google BigQuery. See the docs: https://pandas-gbq.readthedocs.io. Use pip or conda to install pandas-gbq.
+2025-10-27 16:10:32,175 [INFO] data_cleaning: ============================================================
+2025-10-27 16:10:32,175 [INFO] data_cleaning: Completed at: 2025-10-27 16:10:32
+2025-10-27 16:10:32,175 [INFO] data_cleaning: Total runtime: 41.39 seconds
+2025-10-27 16:10:32,175 [INFO] data_cleaning: ============================================================
+2025-10-27 16:26:25,908 [INFO] data_cleaning: ============================================================
+2025-10-27 16:26:25,908 [INFO] data_cleaning: Good Reads Data Cleaning Pipeline
+2025-10-27 16:26:25,908 [INFO] data_cleaning: Started at: 2025-10-27 16:26:25
+2025-10-27 16:26:25,908 [INFO] data_cleaning: ============================================================
+2025-10-27 16:26:25,908 [INFO] data_cleaning: Starting cleaning for table: books.goodreads_books_mystery_thriller_crime
+2025-10-27 16:26:27,316 [INFO] data_cleaning: Retrieved 29 columns for table goodreads_books_mystery_thriller_crime
+2025-10-27 16:26:27,322 [INFO] data_cleaning: Executing cleaning query for goodreads_books_mystery_thriller_crime...
+2025-10-27 16:26:45,905 [INFO] data_cleaning:  Cleaned table saved: recommendation-system-475301.books.goodreads_books_cleaned
+2025-10-27 16:26:45,907 [INFO] data_cleaning: Starting cleaning for table: books.goodreads_interactions_mystery_thriller_crime
+2025-10-27 16:26:46,787 [INFO] data_cleaning: Retrieved 10 columns for table goodreads_interactions_mystery_thriller_crime
+2025-10-27 16:26:46,791 [INFO] data_cleaning: Executing cleaning query for goodreads_interactions_mystery_thriller_crime...
+2025-10-27 16:26:55,402 [INFO] data_cleaning:  Cleaned table saved: recommendation-system-475301.books.goodreads_interactions_cleaned
+2025-10-27 16:26:57,518 [INFO] data_cleaning: Books sample:
+2025-10-27 16:26:57,518 [INFO] data_cleaning: 
+                     title_without_series_clean  ...  isbn_clean
+0             Die I Will Not: A Regency Mystery  ...     Unknown
+1                                       Stalker  ...     Unknown
+2  Road Rage CD: Includes 'Duel" and "Throttle"  ...     Unknown
+3                          Come Little Children  ...     Unknown
+4               Dexter in the Dark (Dexter, #3)  ...  0752882007
+
+[5 rows x 29 columns]
+2025-10-27 16:26:57,575 [INFO] data_cleaning: Interactions sample:
+2025-10-27 16:26:57,575 [INFO] data_cleaning: 
+                 started_at_clean  ...                     user_id_clean
+0  Sun Oct 22 15:42:24 -0700 2017  ...  ee89ee8daeae80f108d830642fb3c041
+1  Wed Feb 08 00:00:00 -0800 2017  ...  4a803e2864d399a5ab0114b88b35beac
+2  Thu Oct 05 19:18:16 -0700 2017  ...  0c9c6baddb00d720027c2f9a3b723d7c
+3  Wed Jul 19 16:14:08 -0700 2017  ...  f28a17bc1c5ea198135926fa53edd647
+4  Sat Oct 14 18:36:54 -0700 2017  ...  d0e1e6ca5856129334fccadbef435869
+
+[5 rows x 10 columns]
+2025-10-27 16:26:57,582 [INFO] data_cleaning: Starting gender mapping for authors...
+2025-10-27 16:27:00,103 [INFO] data_cleaning: Retrieved 829529 author rows.
+2025-10-27 16:27:11,857 [INFO] data_cleaning: Uploaded 829529 rows to recommendation-system-475301.books.goodreads_author_gender_map
+2025-10-27 16:27:11,858 [INFO] data_cleaning: Uploaded gender map to books.goodreads_author_gender_map
+2025-10-27 16:27:11,858 [INFO] data_cleaning: ============================================================
+2025-10-27 16:27:11,858 [INFO] data_cleaning: Completed at: 2025-10-27 16:27:11
+2025-10-27 16:27:11,858 [INFO] data_cleaning: Total runtime: 45.95 seconds
+2025-10-27 16:27:11,859 [INFO] data_cleaning: ============================================================

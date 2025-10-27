@@ -365,54 +365,44 @@ def send_failure_email(message):
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
 
-def main():
+def main_pre_validation():
+    """
+    Pre-cleaning validation function - validates source tables
+    """
+    try:
+        logger.info("Running pre-cleaning validation...")
+        return validate_data_quality(use_cleaned_tables=False)
+    except Exception as e:
+        logger.error(f"Error in pre-cleaning validation: {e}")
+        raise
+
+def main_post_validation():
+    """
+    Post-cleaning validation function - validates cleaned tables
+    """
+    try:
+        logger.info("Running post-cleaning validation...")
+        return validate_data_quality(use_cleaned_tables=True)
+    except Exception as e:
+        logger.error(f"Error in post-cleaning validation: {e}")
+        raise
+
+def main(use_cleaned_tables=False):
     """
     Main function called by Airflow DAG
-    For pre-cleaning validation, use source tables
-    For post-cleaning validation, use cleaned tables
+    Args:
+        use_cleaned_tables (bool): If True, validate cleaned tables; if False, validate source tables
     """
-    # Check if this is post-cleaning validation by looking for cleaned tables
     try:
-        project_id = "recommendation-system-475301"
-        dataset = "books"
-        
-        if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-            client = bigquery.Client(project=project_id)
-        else:
-            logger.error("GCP credentials not found")
-            raise Exception("GCP credentials not configured")
-        
-        # Check if cleaned tables exist to determine validation type
-        cleaned_books_exists = check_table_exists(client, project_id, dataset, "goodreads_books_cleaned")
-        cleaned_interactions_exists = check_table_exists(client, project_id, dataset, "goodreads_interactions_cleaned")
-        
-        use_cleaned_tables = cleaned_books_exists and cleaned_interactions_exists
-        
         validation_type = "post-cleaning" if use_cleaned_tables else "pre-cleaning"
         logger.info(f"Running {validation_type} validation...")
         
         return validate_data_quality(use_cleaned_tables)
         
     except Exception as e:
-        logger.error(f"Error determining validation type: {e}")
-        # Default to pre-cleaning validation
-        return validate_data_quality(use_cleaned_tables=False)
+        logger.error(f"Error in validation: {e}")
+        raise
 
-def check_table_exists(client, project_id, dataset, table_name):
-    """
-    Check if a table exists in BigQuery
-    """
-    try:
-        query = f"""
-        SELECT COUNT(*) as count
-        FROM `{project_id}.{dataset}.INFORMATION_SCHEMA.TABLES`
-        WHERE table_name = '{table_name}'
-        """
-        result = client.query(query).to_dataframe()
-        return result['count'].iloc[0] > 0
-    except Exception as e:
-        logger.error(f"Error checking if table {table_name} exists: {e}")
-        return False
 
 if __name__ == "__main__":
     main()

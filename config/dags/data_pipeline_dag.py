@@ -10,6 +10,7 @@ from airflow.utils.email import send_email
 from datapipeline.scripts.data_cleaning import main as data_cleaning_main
 from datapipeline.scripts.feature_engineering import main as feature_engg_main
 from datapipeline.scripts.normalization import main as normalization_main
+from datapipeline.scripts.anomaly_detection import main_pre_validation, main_post_validation
 
 default_args = {
     'owner': 'admin',
@@ -102,7 +103,7 @@ with DAG(
     
      data_validation_task = PythonOperator(
         task_id='validate_data_quality',
-        python_callable=anomaly_detection_main,
+        python_callable=main_pre_validation,
         doc_md="""
         ## Data Validation Task
         Simple data quality checks:
@@ -120,7 +121,7 @@ with DAG(
     
      post_cleaning_validation_task = PythonOperator(
         task_id='validate_cleaned_data',
-        python_callable=anomaly_detection_main,
+        python_callable=main_post_validation,
         doc_md="""
         ## Post-Cleaning Validation Task
         Validates data quality after cleaning:

@@ -115,7 +115,7 @@ The feature engineering pipeline creates 40+ features across three levels:
 
 ## Feature Engineering Pipeline Output
 
-**Table Name**: `goodreads_features_cleaned`  
+**Table Name**: `goodreads_features`  
 **Total Features**: 41  
 **Row Count**: ~24.3M interactions  
 **Storage Size**: ~7.25 GB

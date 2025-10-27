@@ -1,5 +1,7 @@
 import pytest
 
+# Tests should run on staging table
+
 def test_data_cleaning():
     data = [1, 2, None, 4, None, 6]
     cleaned_data = [x for x in data if x is not None]

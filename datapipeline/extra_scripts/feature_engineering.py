@@ -1,13 +1,3 @@
-# feature_engineering.py
-"""
-Feature Engineering Pipeline (Final BigQuery-Safe Version)
------------------------------------------------------------
-Runs entirely in BigQuery. Produces book-, user-, and interaction-level
-features for Goodreads Mystery/Thriller/Crime dataset.
-
-Output: books.goodreads_features_mystery_thriller_crime
-"""
-
 import os
 from google.cloud import bigquery
 

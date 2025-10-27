@@ -1,14 +1,10 @@
 # feature_engineering.py
 
 import os
-import logging
 from google.cloud import bigquery
 from datetime import datetime
-import pandas as pd
 from datapipeline.scripts.logger_setup import get_logger
 import time
-
-
 
 class FeatureEngineering:
 
@@ -389,7 +385,7 @@ class FeatureEngineering:
             os.makedirs("data", exist_ok=True)
 
             # Save as parquet
-            output_path = f"data/features_sample_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
+            output_path = f"data/sample_features/features_sample_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
             sample_df.to_parquet(output_path, index=False)
 
             self.logger.info(f" Sample saved to {output_path}")

@@ -11,3 +11,5 @@ goodreads_recommendations.egg-info
 
 # Ignore pytest cache
 .pytest_cache/
+
+data/sample_features/

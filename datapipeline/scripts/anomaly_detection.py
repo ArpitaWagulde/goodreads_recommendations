@@ -90,11 +90,10 @@ class AnomalyDetection:
             if columns_info is None:
                 return False
             
-            # Get sample data
             query = f"""
             SELECT * FROM `{self.project_id}.{self.dataset}.{table_name}`
             """
-            df = self.client.query(query).to_dataframe()
+            df = self.client.query(query).to_dataframe(create_bqstorage_client=False)
             
             if df.empty:
                 self.logger.error("Books table is empty")
@@ -226,11 +225,10 @@ class AnomalyDetection:
             if columns_info is None:
                 return False
             
-            # Get sample data
             query = f"""
             SELECT * FROM `{self.project_id}.{self.dataset}.{table_name}`
             """
-            df = self.client.query(query).to_dataframe()
+            df = self.client.query(query).to_dataframe(create_bqstorage_client=False)
             
             if df.empty:
                 self.logger.error("Interactions table is empty")

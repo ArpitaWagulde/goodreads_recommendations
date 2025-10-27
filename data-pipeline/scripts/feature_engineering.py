@@ -5,6 +5,9 @@ import logging
 from google.cloud import bigquery
 from datetime import datetime
 import pandas as pd
+from logger_setup import get_logger
+import time
+
 
 
 class FeatureEngineering:
@@ -14,11 +17,7 @@ class FeatureEngineering:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("AIRFLOW_HOME", ".") + "/gcp_credentials.json"
 
         # Logging configuration
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s [%(levelname)s] %(message)s'
-        )
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger("feature_engineering")
 
         # BigQuery client
         self.client = bigquery.Client()
@@ -356,6 +355,20 @@ class FeatureEngineering:
             self.logger.info(f"Avg pages: {stats['avg_pages'].iloc[0]}")
             self.logger.info(f"Avg rating: {stats['avg_rating'].iloc[0]}")
 
+            # Simple data anomaly detection checks
+            if stats['total_rows'].iloc[0] == 0:
+                self.logger.warning(
+                    "Anomaly Detected: No rows found in the final features table!")
+
+            if stats['avg_rating'].iloc[0] < 1.0 or stats['avg_rating'].iloc[0] > 5.0:
+                self.logger.warning(
+                    "Anomaly Detected: Average rating is outside the expected range (1–5).")
+
+            if stats['unique_users'].iloc[0] < 1:
+                self.logger.warning(
+                    "Anomaly Detected: Very few unique users found — potential data loss.")
+
+
         except Exception as e:
             self.logger.error(f"Error getting table stats: {e}", exc_info=True)
 
@@ -393,9 +406,10 @@ class FeatureEngineering:
 
     def main_runner(self):
         self.logger.info("=" * 60)
-        self.logger.info("GOODREADS FEATURE ENGINEERING PIPELINE")
+        self.logger.info("Good Reads Feature Engineering Pipeline")
+        start_time = time.time()
+        self.logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.logger.info("=" * 60)
-        self.logger.info(f"Started at: {datetime.now()}")
 
         # Create features
         self.create_features()
@@ -405,14 +419,16 @@ class FeatureEngineering:
 
         # Export sample
         self.export_sample(sample_size=1000)
-
-        self.logger.info(f"Completed at: {datetime.now()}")
+        end_time = time.time()
+        self.logger.info("=" * 60)
+        self.logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.info(f"Total runtime: {(end_time - start_time):.2f} seconds")
         self.logger.info("=" * 60)
 
 
 def main():
-    # feature_engineer = FeatureEngineering()
-    # feature_engineer.main_runner()
+    feature_engineer = FeatureEngineering()
+    feature_engineer.main_runner()
     print("TEST COMMENT")
 
 

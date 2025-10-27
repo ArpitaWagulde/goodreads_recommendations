@@ -4,6 +4,9 @@ import os
 import logging
 from google.cloud import bigquery
 from datetime import datetime
+from logger_setup import get_logger
+import time
+from datetime import datetime
 
 class GoodreadsNormalization:
 
@@ -11,11 +14,8 @@ class GoodreadsNormalization:
         # Set Google credentials
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("AIRFLOW_HOME", ".") + "/gcp_credentials.json"
 
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s [%(levelname)s] %(message)s'
-        )
-        self.logger = logging.getLogger(__name__)
+        # Logging configuration
+        self.logger = get_logger("normalization")
 
         self.client = bigquery.Client()
         self.project_id = self.client.project
@@ -95,9 +95,10 @@ class GoodreadsNormalization:
     def run(self):
         """Run the full normalization pipeline."""
         self.logger.info("="*60)
-        self.logger.info("GOODREADS FEATURE NORMALIZATION PIPELINE")
-        self.logger.info(f"Started at: {datetime.now()}")
-        self.logger.info("="*60)
+        self.logger.info("Good Reads Normalization Pipeline")
+        start_time = time.time()
+        self.logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.info("=" * 60)
 
         self.create_backup()
 
@@ -105,8 +106,11 @@ class GoodreadsNormalization:
 
         self.normalize_user_ratings()
 
-        self.logger.info(f"Completed at: {datetime.now()}")
-        self.logger.info("="*60)
+        end_time = time.time()
+        self.logger.info("=" * 60)
+        self.logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.info(f"Total runtime: {(end_time - start_time):.2f} seconds")
+        self.logger.info("=" * 60)
 
 
 def main():

@@ -5,6 +5,8 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from datetime import datetime, timedelta
 import os
 from airflow.utils.email import send_email
+import pytest
+import logging
 
 
 from datapipeline.scripts.data_cleaning import main as data_cleaning_main
@@ -48,7 +50,6 @@ def log_query_results(**kwargs):
     job_id = ti.xcom_pull(task_ids='read_data_from_bigquery')
 
     from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
-    import logging
 
     hook = BigQueryHook(gcp_conn_id="goodreads_conn")
     client = hook.get_client()
@@ -59,6 +60,43 @@ def log_query_results(**kwargs):
     logging.info("Query Results:")
     for row in rows:
         logging.info(dict(row))
+
+def data_cleaning_run():
+    data_cleaning_main()
+
+    logging.info("Data cleaning completed")
+    logging.info("Running Data Cleaning Tests")
+
+    result = pytest.main(["datapipeline/tests/data_cleaning_test.py", "-q"])
+    if result != 0:
+        raise Exception("Data Cleaning Tests Failed")
+    
+    logging.info("Data Cleaning Tests Passed Successfully")
+
+    
+def feature_engg_run():
+    feature_engg_main()
+
+    logging.info("Feature Engineering completed")
+    logging.info("Running Feature Engineering Tests")
+
+    result = pytest.main(["datapipeline/tests/feature_engineering_test.py", "-q"])
+    if result != 0:
+        raise Exception("Feature Engineering Tests Failed")
+    
+    logging.info("Feature Engineering Tests Passed Successfully")
+    
+def normalization_run():
+    normalization_main()
+
+    logging.info("Normalization completed")
+    logging.info("Running Normalization Tests")
+
+    result = pytest.main(["datapipeline/tests/normalization_test.py", "-q"])
+    if result != 0:
+        raise Exception("Normalization Tests Failed")
+
+    logging.info("Normalization Tests Passed Successfully")
 
 
 with DAG(
@@ -94,15 +132,17 @@ with DAG(
 
     data_cleaning_task = PythonOperator(
         task_id='clean_data',
-        python_callable=data_cleaning_main,
+        python_callable=data_cleaning_run,
     )
+
     feature_engg_task = PythonOperator(
         task_id='feature_engg_data',
-        python_callable=feature_engg_main,
+        python_callable=feature_engg_run,
     )
+    
     normalization_task = PythonOperator(
         task_id='normalize_data',
-        python_callable=normalization_main,
+        python_callable= normalization_run,
     )
 
     end = EmptyOperator(task_id='end')

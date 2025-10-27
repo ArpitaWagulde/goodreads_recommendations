@@ -8,3 +8,6 @@ config/simple_auth_manager_passwords.json.generated
 
 # Ignore package-info
 goodreads_recommendations.egg-info
+
+# Ignore pytest cache
+.pytest_cache/

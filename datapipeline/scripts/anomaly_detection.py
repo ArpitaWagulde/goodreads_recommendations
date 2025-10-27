@@ -79,7 +79,7 @@ class AnomalyDetection:
         """
         try:
             # Choose table based on validation type
-            table_name = "goodreads_books_cleaned_stage" if use_cleaned_tables else "goodreads_books_mystery_thriller_crime"
+            table_name = "goodreads_books_cleaned_staging" if use_cleaned_tables else "goodreads_books_mystery_thriller_crime"
             
             self.logger.info(f"Validating books table: {table_name}")
             
@@ -249,7 +249,7 @@ class AnomalyDetection:
         """
         try:
             # Choose table based on validation type
-            table_name = "goodreads_interactions_cleaned_stage" if use_cleaned_tables else "goodreads_interactions_mystery_thriller_crime"
+            table_name = "goodreads_interactions_cleaned_staging" if use_cleaned_tables else "goodreads_interactions_mystery_thriller_crime"
             
             self.logger.info(f"Validating interactions table: {table_name}")
             

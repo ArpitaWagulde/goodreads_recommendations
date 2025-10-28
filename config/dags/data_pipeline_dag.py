@@ -69,7 +69,7 @@ def data_cleaning_run():
     logging.info("Data cleaning completed")
     logging.info("Running Data Cleaning Tests")
 
-    result = pytest.main(["datapipeline/tests/data_cleaning_test.py", "-q"])
+    result = pytest.main(["datapipeline/tests/test_data_cleaning.py", "-q"])
     if result != 0:
         raise Exception("Data Cleaning Tests Failed")
     
@@ -82,7 +82,7 @@ def feature_engg_run():
     logging.info("Feature Engineering completed")
     logging.info("Running Feature Engineering Tests")
 
-    result = pytest.main(["datapipeline/tests/feature_engineering_test.py", "-q"])
+    result = pytest.main(["datapipeline/tests/test_feature_engineering.py", "-q"])
     if result != 0:
         raise Exception("Feature Engineering Tests Failed")
     
@@ -94,19 +94,19 @@ def normalization_run():
     logging.info("Normalization completed")
     logging.info("Running Normalization Tests")
 
-    result = pytest.main(["datapipeline/tests/normalization_test.py", "-q"])
+    result = pytest.main(["datapipeline/tests/test_normalization.py", "-q"])
     if result != 0:
         raise Exception("Normalization Tests Failed")
 
     logging.info("Normalization Tests Passed Successfully")
 
 def data_versioning_run():
-    data_location = feature_metadata_main()
+    feature_metadata_main()
     
     os.system("dvc add data/metadata/goodreads_features_metadata.json")
     os.system("git add data/metadata/goodreads_features_metadata.json.dvc")
     os.system('git commit -m "Track DVC metadata for features data"')
-    os.system("dvc push")
+    # os.system("dvc push")
     # os.system(f"dvc add {data_location}")
 
     logging.info("Data Versioning completed")
@@ -204,9 +204,6 @@ with DAG(
 
     end = EmptyOperator(task_id='end')
 
-    # start >> data_reading_task >> log_results_task >> data_validation_task >> data_cleaning_task
-    # data_cleaning_task >> post_cleaning_validation_task >> feature_engg_task >> normalization_task
-    # normalization_task >> promote_staging_task >> data_versioning_task >> end
-
-    start >> data_reading_task >> log_results_task >> data_cleaning_task >> feature_engg_task >> normalization_task >> promote_staging_task >> data_versioning_task >> end
-
+    start >> data_reading_task >> log_results_task >> data_validation_task >> data_cleaning_task
+    data_cleaning_task >> post_cleaning_validation_task >> feature_engg_task >> normalization_task
+    normalization_task >> promote_staging_task >> data_versioning_task >> end

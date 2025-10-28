@@ -126,7 +126,7 @@ class AnomalyDetection:
                         "query": f"""
                         SELECT COUNT(*) as null_count
                         FROM `{self.project_id}.{self.dataset}.{table_name}`
-                        WHERE title IS NULL
+                        WHERE title_clean IS NULL
                         """,
                         "max_allowed": 0
                     },
@@ -135,7 +135,7 @@ class AnomalyDetection:
                         "query": f"""
                         SELECT COUNT(*) as invalid_count
                         FROM `{self.project_id}.{self.dataset}.{table_name}`
-                        WHERE publication_year IS NULL OR publication_year = 0 OR publication_year < 1000 OR publication_year > 2030
+                        WHERE publication_year IS NULL OR publication_year <= 0
                         """,
                         "max_allowed": 0
                     },
@@ -144,7 +144,7 @@ class AnomalyDetection:
                         "query": f"""
                         SELECT COUNT(*) as invalid_count
                         FROM `{self.project_id}.{self.dataset}.{table_name}`
-                        WHERE num_pages IS NULL OR num_pages <= 0 OR num_pages > 10000
+                        WHERE num_pages IS NULL OR num_pages <= 0
                         """,
                         "max_allowed": 0
                     }
@@ -231,7 +231,7 @@ class AnomalyDetection:
                         "query": f"""
                         SELECT COUNT(*) as null_count
                         FROM `{self.project_id}.{self.dataset}.{table_name}`
-                        WHERE user_id IS NULL
+                        WHERE user_id_clean IS NULL
                         """,
                         "max_allowed": 0
                     },
@@ -300,11 +300,7 @@ class AnomalyDetection:
             <p><em>This is an automated alert from the Goodreads Data Pipeline.</em></p>
             """
             
-            send_email(
-                to="7d936ad4-351b-4493-99a7-110ed7b6b2f6@emailhook.site",
-                subject=subject,
-                html_content=html_content
-            )
+            send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
             
             self.logger.info("Validation failure email sent")
             

@@ -51,8 +51,10 @@ pip install -e .
   
   ```bash
   export AIRFLOW_HOME=/path/to/your/config/folder
+  export AIRFLOW__SMTP__SMTP_MAIL_FROM="husky.mlops@gmail.com"
+  export AIRFLOW__SMTP__SMTP_USER="husky.mlops@gmail.com"
   export AIRFLOW__SMTP__SMTP_PASSWORD=<SHARED_PASSWORD>
-```
+  ```
   
   Replace `/path/to/your/config/folder` with the absolute path to the config folder of the cloned repository.
 
@@ -86,10 +88,15 @@ Login using the admin credentials
 3. Connection ID : smtp_default ,  Connection Type : Email
 4. Add the following values in standard field,
     - Host : smtp.gmail.com
-    - Login: <SHARED_EMAIL>
+    - Login: husky.mlops@gmail.com
     - Port: 587
     - Password : <SHARED_PASSWORD>
-5. Add the shared JSON in the Extra fields JSON 
+5. Add the following JSON in the Extra fields JSON
+```json
+{
+    "from_email": "husky.mlops@gmail.com"
+}
+```
 
 **Run the DAG:**
 

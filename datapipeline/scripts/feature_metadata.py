@@ -61,8 +61,8 @@ class FeatureMetadata:
             self.logger.info("Wrote metadata to %s", metadata_path)
             print("Wrote metadata to %s", metadata_path)
 
-            timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
-            data_location = f"gs://goodreads-db/data/goodreads_features_{timestamp_str}.csv"
+            # timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
+            # data_location = f"gs://goodreads-db/data/goodreads_features_{timestamp_str}.csv"
 
             # self.logger.info("Starting table extract to %s", data_location)
             # print("Starting table extract to %s", data_location)
@@ -70,7 +70,7 @@ class FeatureMetadata:
             # extract_job.result()
             # self.logger.info("Table extract completed: %s", data_location)
             # print("Table extract completed: %s", data_location)
-            return data_location
+            # return data_location
         except Exception:
             self.logger.exception("Failed to run feature metadata collection")
             raise

@@ -25,6 +25,8 @@ Citations:
 
 ## Getting Started
 
+> **Note:** To run our project on Windows machine, ensure WSL is installed.
+
 ### 1. Clone the Repository
 
 ```bash
@@ -54,10 +56,10 @@ pip install -e .
   The variable set is only for this instance of terminal and will not affect others.
   
   ```bash
-  export AIRFLOW_HOME=/path/to/your/config/folder
+  export AIRFLOW_HOME=/Users/arpitawagulde/Documents/MS/Fall2025/IE7374/goodreads_recommendations/config
   export AIRFLOW__SMTP__SMTP_MAIL_FROM="husky.mlops@gmail.com"
   export AIRFLOW__SMTP__SMTP_USER="husky.mlops@gmail.com"
-  export AIRFLOW__SMTP__SMTP_PASSWORD=<SHARED_PASSWORD>
+  export AIRFLOW__SMTP__SMTP_PASSWORD="azqozbaxmgffpapf"
   ```
   
   Replace `/path/to/your/config/folder` with the absolute path to the config folder of the cloned repository.

@@ -93,18 +93,6 @@ class FeatureMetadata:
                 json.dump(metadata, f, indent=2)
             self.logger.info("Wrote metadata to %s", metadata_path)
             print("Wrote metadata to %s", metadata_path)
-
-            # Note: Data extraction to GCS is commented out but can be enabled if needed
-            # This would extract the table to Google Cloud Storage for backup/archival
-            # timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
-            # data_location = f"gs://goodreads-db/data/goodreads_features_{timestamp_str}.csv"
-            # self.logger.info("Starting table extract to %s", data_location)
-            # print("Starting table extract to %s", data_location)
-            # extract_job = self.client.extract_table(f"{self.dataset_id}.goodreads_features", data_location)
-            # extract_job.result()
-            # self.logger.info("Table extract completed: %s", data_location)
-            # print("Table extract completed: %s", data_location)
-            # return data_location
         except Exception:
             self.logger.exception("Failed to run feature metadata collection")
             raise

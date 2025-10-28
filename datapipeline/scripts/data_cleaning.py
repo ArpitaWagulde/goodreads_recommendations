@@ -11,7 +11,7 @@ class DataCleaning:
     
     def __init__(self):
         # Set Google Application Credentials
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(os.path.dirname(__file__), "gcp_credentials.json")
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("AIRFLOW_HOME")+"/gcp_credentials.json"
         
         # Logging configuration
         self.logger = get_logger("data_cleaning")
@@ -144,13 +144,13 @@ class DataCleaning:
         self.logger.info(f"Total runtime: {(end_time - start_time):.2f} seconds")
         self.logger.info("=" * 60)
 
-    # --- 1️⃣ Load authors table from BigQuery ---
+    # --- Load authors table from BigQuery ---
     def create_author_gender_map(self):
         """Generate and upload author gender mapping table to BigQuery."""
         try:
             self.logger.info("Starting gender mapping for authors...")
 
-            # 1️⃣ Load authors table dynamically using project from GCP creds
+            #Load authors table dynamically using project from GCP creds
             query = f"""
                 SELECT author_id, name
                 FROM `{self.project_id}.books.goodreads_book_authors`
@@ -159,7 +159,7 @@ class DataCleaning:
             authors_df = self.client.query(query).to_dataframe()
             self.logger.info(f"Retrieved {len(authors_df)} author rows.")
 
-            # 2️⃣ Infer gender locally
+            #Infer gender locally
             detector = Detector(case_sensitive=False)
 
             def get_gender(name):
@@ -176,7 +176,7 @@ class DataCleaning:
             tqdm.pandas(desc="Inferring author gender")
             authors_df["author_gender_group"] = authors_df["name"].progress_apply(get_gender)
 
-            # ⃣Upload mapping back to BigQuery
+            #Upload mapping back to BigQuery
             table_id = f"{self.project_id}.books.goodreads_author_gender_map"
             job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
             job = self.client.load_table_from_dataframe(authors_df, table_id, job_config=job_config)

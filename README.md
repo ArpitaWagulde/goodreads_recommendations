@@ -13,11 +13,15 @@ This project builds a machine learning-based book recommendation system using Go
 
 ## Project Architecture Overview
 
-(Include a diagram or description of the architecture here)
+![Project Architecture](assets/architecture.jpg)
 
 ## Data Sources
 
 - **Goodreads Dataset:** Books, ratings, and metadata from the [Goodbooks dataset](https://cseweb.ucsd.edu/~jmcauley/datasets/goodreads.html)
+
+Citations:
+- Mengting Wan, Julian McAuley, ["Item Recommendation on Monotonic Behavior Chains"](https://mengtingwan.github.io/paper/recsys18_mwan.pdf), in RecSys'18.
+- Mengting Wan, Rishabh Misra, Ndapa Nakashole, Julian McAuley, ["Fine-Grained Spoiler Detection from Large-Scale Review Corpora"](https://mengtingwan.github.io/paper/acl19_mwan.pdf), in ACL'19.
 
 ## Getting Started
 
@@ -390,7 +394,7 @@ This ensures data quality gates at both ends of the cleaning process, preventing
 
 This section highlights key findings from our exploratory data analysis and bias detection notebooks that inform our recommendation system design.
 
-### Raw Data Analysis (`raw_analysis.ipynb`)
+### Raw Data Analysis [(`raw_analysis.ipynb`)](https://github.com/purva-agarwal/goodreads_recommendations/blob/master/datapipeline/data/notebooks/raw_analysis.ipynb)
 
 **Purpose:** BigQuery data exploration to inspect raw data schema, null patterns, and data distributions.
 
@@ -415,7 +419,7 @@ This section highlights key findings from our exploratory data analysis and bias
 - Missing values percentage per column
 - Sample data saved to `../raw/goodreads_sample.csv`
 
-### Bias Analysis & Fairness Assessment (`bias_analysis.ipynb`)
+### Bias Analysis & Fairness Assessment [(`bias_analysis.ipynb`)](https://github.com/purva-agarwal/goodreads_recommendations/blob/master/datapipeline/data/notebooks/bias_analysis.ipynb)
 
 **Purpose:** Comprehensive bias detection and mitigation analysis using group-level shrinkage to ensure fair recommendations across multiple dimensions.
 
@@ -462,3 +466,13 @@ This section highlights key findings from our exploratory data analysis and bias
 
 - `fairness_summary_lambda_0_5.csv` - Comprehensive fairness metrics across all dimensions
 - Multiple visualization charts showing bias reduction effectiveness
+
+### Project Visuals [(assets/)](https://github.com/purva-agarwal/goodreads_recommendations/blob/master/assets)
+
+<div style="display: flex; overflow-x: auto; gap: 12px; padding: 10px; white-space: nowrap;">
+  <img src="assets/db_tables_gcp.png" alt="DB Tables on GCP" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
+  <img src="assets/DAG_task_instances.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
+  <img src="assets/DAG_task.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
+  <img src="assets/email_alerts.jpg" alt="Email Alerts" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
+  <img src="assets/gnatt_chart.jpg" alt="Gantt Chart" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
+</div>

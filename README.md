@@ -51,6 +51,9 @@ pip install -e .
   
   ```bash
   export AIRFLOW_HOME=/path/to/your/config/folder
+  export AIRFLOW__SMTP__SMTP_MAIL_FROM="husky.mlops@gmail.com"
+  export AIRFLOW__SMTP__SMTP_USER="husky.mlops@gmail.com"
+  export AIRFLOW__SMTP__SMTP_PASSWORD=<SHARED_PASSWORD>
   ```
   
   Replace `/path/to/your/config/folder` with the absolute path to the config folder of the cloned repository.
@@ -71,13 +74,31 @@ Open your browser and go to: <http://localhost:8080>
 
 Login using the admin credentials
 
-**Add Connection on Airflow UI:**
+**Add GCP Connection on Airflow UI:**
 
 1. Go to Admin → Connections
 2. Click "Add Connection"
 3. Set Connection ID: `goodreads_conn`
 4. Set Connection Type: `Google Cloud`
 5. Paste the shared GCP access credentials JSON in the "Extra Fields JSON" field
+
+
+
+**Add Email Connection on Airflow UI:**
+1. Admin >> Connections
+2. Add Connection
+3. Connection ID : smtp_default ,  Connection Type : Email
+4. Add the following values in standard field,
+    - Host : smtp.gmail.com
+    - Login: husky.mlops@gmail.com
+    - Port: 587
+    - Password : <SHARED_PASSWORD>
+5. Add the following JSON in the Extra fields JSON
+```json
+{
+    "from_email": "husky.mlops@gmail.com"
+}
+```
 
 **Run the DAG:**
 

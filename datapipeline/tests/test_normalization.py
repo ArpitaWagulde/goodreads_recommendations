@@ -1,3 +1,20 @@
+"""
+Unit Tests for Data Normalization Module
+
+This module contains comprehensive unit tests for the GoodreadsNormalization class,
+testing normalization functionality, error handling, and BigQuery integration.
+
+Test Coverage:
+- Log transformation operations
+- User-centered rating normalization
+- Error handling and logging
+- BigQuery client interactions
+- Pipeline execution flow
+
+Author: Goodreads Recommendation Team
+Date: 2025
+"""
+
 import os
 import pytest
 from unittest.mock import patch, MagicMock
@@ -6,13 +23,23 @@ from datapipeline.scripts.normalization import GoodreadsNormalization
 
 @pytest.fixture(autouse=True)
 def set_env(monkeypatch):
-    """Ensure AIRFLOW_HOME is defined during tests."""
+    """
+    Ensure AIRFLOW_HOME is defined during tests.
+    
+    This fixture automatically sets the AIRFLOW_HOME environment variable
+    for all tests to ensure proper configuration during testing.
+    """
     monkeypatch.setenv("AIRFLOW_HOME", "config/")
 
 
 @pytest.fixture
 def mock_bq_client():
-    """Create a mock BigQuery client."""
+    """
+    Create a mock BigQuery client for testing.
+    
+    Returns:
+        MagicMock: Mocked BigQuery client with standard methods
+    """
     mock_client = MagicMock()
     mock_query_job = MagicMock()
     mock_query_job.result.return_value = None
@@ -23,7 +50,15 @@ def mock_bq_client():
 
 @pytest.fixture
 def normalization_instance(mock_bq_client):
-    """Create GoodreadsNormalization instance with mocked BigQuery client."""
+    """
+    Create GoodreadsNormalization instance with mocked BigQuery client.
+    
+    Args:
+        mock_bq_client: Mocked BigQuery client fixture
+        
+    Returns:
+        GoodreadsNormalization: Instance with mocked dependencies
+    """
     with patch("datapipeline.scripts.normalization.bigquery.Client", return_value=mock_bq_client):
         gn = GoodreadsNormalization()
         gn.logger = MagicMock()
@@ -118,7 +153,35 @@ def test_main_executes(monkeypatch):
     """Ensure main() runs the pipeline."""
     from datapipeline.scripts import normalization
 
+    # Stub BigQuery client to avoid real credential lookup
+    fake_client = MagicMock()
+    fake_client.project = "test_project"
+    monkeypatch.setattr(normalization.bigquery, "Client", lambda: fake_client)
+
     mock_run = MagicMock()
     monkeypatch.setattr(normalization.GoodreadsNormalization, "run", mock_run)
     normalization.main()
     mock_run.assert_called_once()
+
+
+def test_normalize_user_ratings_query_order(normalization_instance, mock_bq_client):
+    """Ensure ALTER runs before UPDATE in normalize_user_ratings."""
+    normalization_instance.normalize_user_ratings()
+
+    # Collect SQL strings in the order they were called
+    called_sql = [call.args[0] for call in mock_bq_client.query.call_args_list]
+    assert len(called_sql) == 2
+    assert "ALTER COLUMN rating SET DATA TYPE FLOAT64" in called_sql[0]
+    assert "SET rating = rating - avg_rating_given" in called_sql[1]
+
+
+def test_log_transform_features_contains_edge_case_clauses(normalization_instance, mock_bq_client):
+    """Ensure CASE clauses for non-positive values are included in the SQL."""
+    normalization_instance.log_transform_features()
+
+    sql = mock_bq_client.query.call_args[0][0]
+    # Check key CASE clauses to handle zeros/negatives
+    assert "num_books_read = CASE" in sql
+    assert "WHEN num_books_read > 0 THEN CAST(LN(num_books_read + 1) AS INT64)" in sql
+    assert "user_days_to_read = CASE" in sql
+    assert "WHEN user_days_to_read > 0 THEN CAST(LN(user_days_to_read) AS INT64)" in sql

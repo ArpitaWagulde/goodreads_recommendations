@@ -88,11 +88,6 @@ Login using the admin credentials
 
 #### Locally (for development)
 
-```bash
-# Start the FastAPI server
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
 Visit: [http://localhost:8000/docs](http://localhost:8000/docs) to test the API using Swagger UI.
 
 ## Data Pipeline Architecture & Components

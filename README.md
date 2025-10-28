@@ -84,8 +84,6 @@ Login using the admin credentials
 1. In the Airflow UI, search for `goodreads_recommendation_pipeline` DAG
 2. Click "Trigger DAG" to start execution
 
-### 4. Start the Recommendation API
-
 #### Locally (for development)
 
 Visit: [http://localhost:8000/docs](http://localhost:8000/docs) to test the API using Swagger UI.

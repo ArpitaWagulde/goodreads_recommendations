@@ -382,7 +382,7 @@ class FeatureEngineering:
             sample_df = self.client.query(sample_query).to_dataframe(create_bqstorage_client=False)
 
             # Create data directory if it doesn't exist
-            os.makedirs("data", exist_ok=True)
+            os.makedirs("data/sample_features", exist_ok=True)
 
             # Save as parquet
             output_path = f"data/sample_features/features_sample_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"

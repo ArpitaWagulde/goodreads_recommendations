@@ -22,6 +22,7 @@ import time
 from datetime import datetime
 from gender_guesser.detector import Detector
 from tqdm import tqdm
+import sys
 
 class DataCleaning:
     
@@ -271,8 +272,7 @@ class DataCleaning:
                 else:
                     return "Unknown"
 
-            # Apply gender inference with progress bar
-            tqdm.pandas(desc="Inferring author gender")
+            tqdm.pandas(desc="Inferring author gender", file=sys.stdout)
             authors_df["author_gender_group"] = authors_df["name"].progress_apply(get_gender)
 
             # Upload gender mapping back to BigQuery

@@ -35,6 +35,7 @@ from datapipeline.scripts.normalization import main as normalization_main
 from datapipeline.scripts.anomaly_detection import main_pre_validation, main_post_validation
 from datapipeline.scripts.promote_staging_tables import main as promote_staging_main
 from datapipeline.scripts.feature_metadata import main as feature_metadata_main
+from datapipeline.scripts.train_test_val import main as train_test_split_main
 
 # Default arguments for all DAG tasks
 default_args = {
@@ -155,6 +156,10 @@ def data_versioning_run():
 
     logging.info("Data Versioning completed")
 
+def train_test_split_run():
+    train_test_split_main()
+
+    logging.info("Train Test Split completed")
 
 with DAG(
     dag_id='goodreads_recommendation_pipeline',
@@ -246,8 +251,14 @@ with DAG(
         python_callable=data_versioning_run,
     )
 
+    train_test_split_task = PythonOperator(
+        task_id='train_test_split',
+        python_callable=train_test_split_run,
+    )
+
     end = EmptyOperator(task_id='end')
 
     start >> data_reading_task >> log_results_task >> data_validation_task >> data_cleaning_task
     data_cleaning_task >> post_cleaning_validation_task >> feature_engg_task >> normalization_task
-    normalization_task >> promote_staging_task >> data_versioning_task >> end
+    normalization_task >> promote_staging_task >> data_versioning_task >> train_test_split_task >> end
+    

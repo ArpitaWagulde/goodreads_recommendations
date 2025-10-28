@@ -57,7 +57,7 @@ def test_clean_table_basic(data_cleaning_instance, mock_bq_client):
 
     query_call = mock_bq_client.query.call_args[0][0]
     assert "goodreads_books" in query_call
-    assert "APPROX_QUANTILES(num_pages" in query_call
+    assert "APPROX_QUANTILES(NULLIF(num_pages, 0)" in query_call
 
 
 def test_clean_table_error(data_cleaning_instance, mock_bq_client):
@@ -96,7 +96,7 @@ def test_clean_table_creates_expected_sql(data_cleaning_instance, mock_bq_client
         query_call = mock_bq_client.query.call_args[0][0]
 
         # Core checks (structure and medians)
-        assert "APPROX_QUANTILES(num_pages" in query_call
+        assert "APPROX_QUANTILES(NULLIF(num_pages, 0)" in query_call
         assert "WITH main AS" in query_call
         assert "SELECT DISTINCT" in query_call
 

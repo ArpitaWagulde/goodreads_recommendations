@@ -5,12 +5,15 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from datetime import datetime, timedelta
 import os
 from airflow.utils.email import send_email
-
+import pytest
+import logging
 
 from datapipeline.scripts.data_cleaning import main as data_cleaning_main
 from datapipeline.scripts.feature_engineering import main as feature_engg_main
 from datapipeline.scripts.normalization import main as normalization_main
 from datapipeline.scripts.anomaly_detection import main_pre_validation, main_post_validation
+from datapipeline.scripts.promote_staging_tables import main as promote_staging_main
+from datapipeline.scripts.feature_metadata import main as feature_metadata_main
 
 default_args = {
     'owner': 'admin',
@@ -33,7 +36,7 @@ def send_failure_email(context):
     <p>DAG <b>{dag_id}</b> failed for task <b>{task_id}</b> on {execution_date}.</p>
     <p>Check logs: <a href="{log_url}">Click here</a></p>
     """
-    send_email(to="7d936ad4-351b-4493-99a7-110ed7b6b2f6@emailhook.site", subject=subject, html_content=html_content)
+    send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
 
 def send_success_email(context):
     dag_id = context.get('dag').dag_id
@@ -42,14 +45,13 @@ def send_success_email(context):
     html_content = f"""
     <p>DAG <b>{dag_id}</b> succeeded for execution date {execution_date}.</p>
     """
-    send_email(to="7d936ad4-351b-4493-99a7-110ed7b6b2f6@emailhook.site", subject=subject, html_content=html_content)
+    send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
     
 def log_query_results(**kwargs):
     ti = kwargs['ti']
     job_id = ti.xcom_pull(task_ids='read_data_from_bigquery')
 
     from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
-    import logging
 
     hook = BigQueryHook(gcp_conn_id="goodreads_conn")
     client = hook.get_client()
@@ -60,6 +62,54 @@ def log_query_results(**kwargs):
     logging.info("Query Results:")
     for row in rows:
         logging.info(dict(row))
+
+def data_cleaning_run():
+    data_cleaning_main()
+
+    logging.info("Data cleaning completed")
+    logging.info("Running Data Cleaning Tests")
+
+    result = pytest.main(["datapipeline/tests/test_data_cleaning.py", "-q"])
+    if result != 0:
+        raise Exception("Data Cleaning Tests Failed")
+    
+    logging.info("Data Cleaning Tests Passed Successfully")
+
+    
+def feature_engg_run():
+    feature_engg_main()
+
+    logging.info("Feature Engineering completed")
+    logging.info("Running Feature Engineering Tests")
+
+    result = pytest.main(["datapipeline/tests/test_feature_engineering.py", "-q"])
+    if result != 0:
+        raise Exception("Feature Engineering Tests Failed")
+    
+    logging.info("Feature Engineering Tests Passed Successfully")
+    
+def normalization_run():
+    normalization_main()
+
+    logging.info("Normalization completed")
+    logging.info("Running Normalization Tests")
+
+    result = pytest.main(["datapipeline/tests/test_normalization.py", "-q"])
+    if result != 0:
+        raise Exception("Normalization Tests Failed")
+
+    logging.info("Normalization Tests Passed Successfully")
+
+def data_versioning_run():
+    feature_metadata_main()
+    
+    os.system("dvc add data/metadata/goodreads_features_metadata.json")
+    os.system("git add data/metadata/goodreads_features_metadata.json.dvc")
+    os.system('git commit -m "Track DVC metadata for features data"')
+    # os.system("dvc push")
+    # os.system(f"dvc add {data_location}")
+
+    logging.info("Data Versioning completed")
 
 
 with DAG(
@@ -101,7 +151,7 @@ with DAG(
         python_callable=log_query_results,
     )
     
-     data_validation_task = PythonOperator(
+    data_validation_task = PythonOperator(
         task_id='validate_data_quality',
         python_callable=main_pre_validation,
         doc_md="""
@@ -116,10 +166,10 @@ with DAG(
 
     data_cleaning_task = PythonOperator(
         task_id='clean_data',
-        python_callable=data_cleaning_main,
+        python_callable=data_cleaning_run,
     )
     
-     post_cleaning_validation_task = PythonOperator(
+    post_cleaning_validation_task = PythonOperator(
         task_id='validate_cleaned_data',
         python_callable=main_post_validation,
         doc_md="""
@@ -131,15 +181,29 @@ with DAG(
         """
     )
      
+
     feature_engg_task = PythonOperator(
         task_id='feature_engg_data',
-        python_callable=feature_engg_main,
+        python_callable=feature_engg_run,
     )
+    
     normalization_task = PythonOperator(
         task_id='normalize_data',
-        python_callable=normalization_main,
+        python_callable= normalization_run,
+    )
+
+    promote_staging_task = PythonOperator(
+        task_id='promote_staging_tables',
+        python_callable=promote_staging_main,
+    )
+
+    data_versioning_task = PythonOperator(
+        task_id='data_versioning',
+        python_callable=data_versioning_run,
     )
 
     end = EmptyOperator(task_id='end')
 
-    start >> data_reading_task >> log_results_task >> data_validation_task >> data_cleaning_task >> post_cleaning_validation_task >> feature_engg_task >> normalization_task >> end
+    start >> data_reading_task >> log_results_task >> data_validation_task >> data_cleaning_task
+    data_cleaning_task >> post_cleaning_validation_task >> feature_engg_task >> normalization_task
+    normalization_task >> promote_staging_task >> data_versioning_task >> end

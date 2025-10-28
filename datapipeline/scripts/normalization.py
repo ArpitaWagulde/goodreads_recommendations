@@ -1,7 +1,6 @@
 # goodreads_normalization.py
 
 import os
-import logging
 from google.cloud import bigquery
 from datetime import datetime
 from datapipeline.scripts.logger_setup import get_logger
@@ -20,22 +19,7 @@ class GoodreadsNormalization:
         self.client = bigquery.Client()
         self.project_id = self.client.project
         self.dataset_id = "books"
-        self.table = f"{self.project_id}.{self.dataset_id}.goodreads_features_cleaned"
-        self.backup_table = f"{self.project_id}.{self.dataset_id}.goodreads_features_cleaned_backup"
-
-    def create_backup(self):
-        """Create a backup of the original table."""
-        try:
-            self.logger.info(f"Creating backup table: {self.backup_table}")
-            query = f"""
-            CREATE OR REPLACE TABLE `{self.backup_table}` AS
-            SELECT * FROM `{self.table}`;
-            """
-            self.client.query(query).result()
-            self.logger.info("Backup created successfully.")
-        except Exception as e:
-            self.logger.error("Error creating backup table.", exc_info=True)
-            raise
+        self.table = f"{self.project_id}.{self.dataset_id}.goodreads_features_cleaned_staging"
 
     def log_transform_features(self):
         """Apply log transformations to skewed numeric features."""
@@ -99,8 +83,6 @@ class GoodreadsNormalization:
         start_time = time.time()
         self.logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.logger.info("=" * 60)
-
-        self.create_backup()
 
         self.log_transform_features()
 

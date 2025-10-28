@@ -1,7 +1,6 @@
 import os
-import logging
 from google.cloud import bigquery
-from logger_setup import get_logger
+from datapipeline.scripts.logger_setup import get_logger
 import time
 from datetime import datetime
 from gender_guesser.detector import Detector
@@ -48,7 +47,7 @@ class DataCleaning:
 
                 if apply_global_median and col in self.median_numeric_cols:
                     select_exprs.append(
-                        f"COALESCE({col}, global_medians.{col}_median) AS {col}"
+                        f"COALESCE(NULLIF({col}, 0), global_medians.{col}_median) AS {col}"
                     )
                 elif col in string_cols:
                     select_exprs.append(f"COALESCE(NULLIF(TRIM({col}), ''), 'Unknown') AS {col}_clean")
@@ -72,7 +71,7 @@ class DataCleaning:
                 ),
                 global_medians AS (
                     SELECT
-                        {', '.join([f'APPROX_QUANTILES({col}, 2)[OFFSET(1)] AS {col}_median' for col in self.median_numeric_cols])}
+                        {', '.join([f'APPROX_QUANTILES(NULLIF({col}, 0), 2)[OFFSET(1)] AS {col}_median' for col in self.median_numeric_cols])}
                     FROM main
                 )
                 SELECT DISTINCT
@@ -109,25 +108,25 @@ class DataCleaning:
         self.clean_table(
             dataset_id="books",
             table_name="goodreads_books_mystery_thriller_crime",
-            destination_table=f"{self.project_id}.books.goodreads_books_cleaned",
+            destination_table=f"{self.project_id}.books.goodreads_books_cleaned_staging",
             apply_global_median=True
         )
 
         self.clean_table(
             dataset_id="books",
             table_name="goodreads_interactions_mystery_thriller_crime",
-            destination_table=f"{self.project_id}.books.goodreads_interactions_cleaned",
+            destination_table=f"{self.project_id}.books.goodreads_interactions_cleaned_staging",
             apply_global_median=False
         )
 
         # Fetch and log sample rows from cleaned tables
         try:
             df_books_sample = self.client.query(
-                f"SELECT * FROM `{self.project_id}.books.goodreads_books_cleaned` LIMIT 5"
+                f"SELECT * FROM `{self.project_id}.books.goodreads_books_cleaned_staging` LIMIT 5"
             ).to_dataframe(create_bqstorage_client=False)
 
             df_interactions_sample = self.client.query(
-                f"SELECT * FROM `{self.project_id}.books.goodreads_interactions_cleaned` LIMIT 5"
+                f"SELECT * FROM `{self.project_id}.books.goodreads_interactions_cleaned_staging` LIMIT 5"
             ).to_dataframe(create_bqstorage_client=False)
 
             self.logger.info("Books sample:")
@@ -156,7 +155,7 @@ class DataCleaning:
                 FROM `{self.project_id}.books.goodreads_book_authors`
                 WHERE name IS NOT NULL
             """
-            authors_df = self.client.query(query).to_dataframe()
+            authors_df = self.client.query(query).to_dataframe(create_bqstorage_client=False)
             self.logger.info(f"Retrieved {len(authors_df)} author rows.")
 
             #Infer gender locally

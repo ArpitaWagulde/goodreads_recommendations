@@ -3,8 +3,14 @@ venv/
 *pycache*
 
 # Ignore Airflow logs and generated password file
-config/logs
 config/simple_auth_manager_passwords.json.generated
 
 # Ignore package-info
 goodreads_recommendations.egg-info
+
+# Ignore pytest cache
+.pytest_cache/
+
+data/sample_features/
+
+**/logs/

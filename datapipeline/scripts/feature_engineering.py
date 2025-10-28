@@ -1,4 +1,20 @@
-# feature_engineering.py
+"""
+Feature Engineering Module for Goodreads Recommendation System
+
+This module creates comprehensive machine learning features from cleaned Goodreads data.
+It generates 40+ features across three levels: book-level, user-level, and interaction-level.
+
+Key Features Generated:
+- Book-level: popularity metrics, reading difficulty, content features, temporal features
+- User-level: reading patterns, preferences, activity metrics
+- Interaction-level: user-book specific features, temporal patterns
+
+The module uses BigQuery for scalable feature computation and creates a final
+features table ready for machine learning model training.
+
+Author: Goodreads Recommendation Team
+Date: 2025
+"""
 
 import os
 from google.cloud import bigquery
@@ -9,35 +25,58 @@ import time
 class FeatureEngineering:
 
     def __init__(self):
-        # Set Google Application Credentials
+        """
+        Initialize the FeatureEngineering class with BigQuery client and configuration.
+        
+        Sets up:
+        - Google Cloud credentials for BigQuery access
+        - Logging configuration for feature engineering operations
+        - BigQuery client and project information
+        - Source and destination table references
+        - Feature engineering parameters and constraints
+        """
+        # Set Google Application Credentials for BigQuery access
+        # Uses AIRFLOW_HOME environment variable to locate credentials file
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("AIRFLOW_HOME", ".") + "/gcp_credentials.json"
 
-        # Logging configuration
+        # Initialize logging for feature engineering operations
         self.logger = get_logger("feature_engineering")
 
-        # BigQuery client
+        # Initialize BigQuery client and get project information
         self.client = bigquery.Client()
         self.project_id = self.client.project
         self.dataset_id = "books"
 
-        # Source and destination tables
+        # Define source and destination table references
         self.books_table = f"{self.project_id}.{self.dataset_id}.goodreads_books_cleaned_staging"
         self.interactions_table = f"{self.project_id}.{self.dataset_id}.goodreads_interactions_cleaned_staging"
         self.destination_table = f"{self.project_id}.{self.dataset_id}.goodreads_features_cleaned_staging"
 
-        # Feature engineering parameters
-        self.MIN_READING_DAYS = 1
-        self.MAX_READING_DAYS = 365
-        self.DEFAULT_PAGE_COUNT = 300
-        self.DEFAULT_READING_DAYS = 14
+        # Feature engineering parameters and constraints
+        self.MIN_READING_DAYS = 1      # Minimum valid reading time in days
+        self.MAX_READING_DAYS = 365    # Maximum valid reading time in days
+        self.DEFAULT_PAGE_COUNT = 300  # Default page count for books with missing data
+        self.DEFAULT_READING_DAYS = 14 # Default reading time for books with missing data
 
     def create_features(self):
+        """
+        Create comprehensive machine learning features from cleaned data.
+        
+        This method builds a complex BigQuery SQL query that generates 40+ features
+        across three levels:
+        1. Book-level features: popularity, difficulty, content characteristics
+        2. User-level features: reading patterns, preferences, activity metrics
+        3. Interaction-level features: user-book specific patterns and relationships
+        
+        The query uses CTEs (Common Table Expressions) to organize the feature
+        engineering logic and creates a final merged table with all features.
+        """
         try:
             self.logger.info(f"Starting feature engineering pipeline")
             self.logger.info(f"Source tables: {self.books_table}, {self.interactions_table}")
             self.logger.info(f"Destination: {self.destination_table}")
 
-            # Build the feature engineering query
+            # Build the comprehensive feature engineering query
             query = f"""
             -- ==============================================================
             -- BOOK-LEVEL FEATURES (including average reading time per book)
@@ -311,24 +350,34 @@ class FeatureEngineering:
               AND publication_year <= EXTRACT(YEAR FROM CURRENT_DATE())
             """
 
-            # Execute the query
+            # Execute the feature engineering query and save results
             job_config = bigquery.QueryJobConfig(
                 destination=self.destination_table,
-                write_disposition="WRITE_TRUNCATE"
+                write_disposition="WRITE_TRUNCATE"  # Overwrite existing table if it exists
             )
 
             self.logger.info("Executing feature engineering query...")
             query_job = self.client.query(query, job_config=job_config)
-            query_job.result()
+            query_job.result()  # Wait for query completion
             self.logger.info(f" Features table successfully created: {self.destination_table}")
 
         except Exception as e:
+            # Log any errors that occur during feature engineering
             self.logger.error(f"Error in feature engineering: {e}", exc_info=True)
             raise
 
     def get_table_stats(self):
+        """
+        Gather and log comprehensive statistics about the generated features table.
+        
+        This method queries the features table to get key metrics and performs
+        basic anomaly detection to ensure data quality. It logs statistics
+        about row counts, user counts, book counts, and average values.
+        """
         try:
             self.logger.info("Gathering table statistics...")
+            
+            # Query to get comprehensive statistics about the features table
             stats_query = f"""
             SELECT 
               COUNT(*) as total_rows,
@@ -342,6 +391,8 @@ class FeatureEngineering:
             """
 
             stats = self.client.query(stats_query).to_dataframe(create_bqstorage_client=False)
+            
+            # Log comprehensive statistics
             self.logger.info("Table Statistics:")
             self.logger.info(f"Total rows: {stats['total_rows'].iloc[0]:,}")
             self.logger.info(f"Unique users: {stats['unique_users'].iloc[0]:,}")
@@ -351,7 +402,7 @@ class FeatureEngineering:
             self.logger.info(f"Avg pages: {stats['avg_pages'].iloc[0]}")
             self.logger.info(f"Avg rating: {stats['avg_rating'].iloc[0]}")
 
-            # Simple data anomaly detection checks
+            # Perform basic data anomaly detection
             if stats['total_rows'].iloc[0] == 0:
                 self.logger.warning(
                     "Anomaly Detected: No rows found in the final features table!")
@@ -364,14 +415,23 @@ class FeatureEngineering:
                 self.logger.warning(
                     "Anomaly Detected: Very few unique users found — potential data loss.")
 
-
         except Exception as e:
             self.logger.error(f"Error getting table stats: {e}", exc_info=True)
 
     def export_sample(self, sample_size=1000):
+        """
+        Export a sample of the features table for analysis and verification.
+        
+        Args:
+            sample_size (int): Number of rows to sample from the features table
+            
+        This method creates a random sample of the features table and saves it
+        as a Parquet file for analysis, debugging, or model development.
+        """
         try:
             self.logger.info(f"Exporting sample of {sample_size} rows...")
 
+            # Use BigQuery's TABLESAMPLE to get a random sample efficiently
             sample_query = f"""
             SELECT * 
             FROM `{self.destination_table}` 
@@ -384,14 +444,14 @@ class FeatureEngineering:
             # Create data directory if it doesn't exist
             os.makedirs("data/sample_features", exist_ok=True)
 
-            # Save as parquet
+            # Save sample as Parquet file with timestamp
             output_path = f"data/sample_features/features_sample_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
             sample_df.to_parquet(output_path, index=False)
 
             self.logger.info(f" Sample saved to {output_path}")
             self.logger.info(f"   Shape: {sample_df.shape}")
 
-            # Show sample
+            # Display sample data preview for verification
             self.logger.info("Sample data preview:")
             display_cols = ['user_id_clean', 'book_id', 'rating', 'num_pages', 'book_era']
             if all(col in sample_df.columns for col in display_cols):
@@ -401,20 +461,34 @@ class FeatureEngineering:
             self.logger.error(f"Error exporting sample: {e}", exc_info=True)
 
     def run(self):
+        """
+        Execute the complete feature engineering pipeline.
+        
+        This method orchestrates the entire feature engineering process:
+        1. Creates comprehensive features from cleaned data
+        2. Gathers and logs table statistics
+        3. Exports a sample for analysis and verification
+        
+        The pipeline generates 40+ features across book, user, and interaction levels
+        and creates a final features table ready for machine learning model training.
+        """
+        # Initialize pipeline execution with logging
         self.logger.info("=" * 60)
         self.logger.info("Good Reads Feature Engineering Pipeline")
         start_time = time.time()
         self.logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.logger.info("=" * 60)
 
-        # Create features
+        # Step 1: Create comprehensive features from cleaned data
         self.create_features()
 
-        # Get statistics
+        # Step 2: Gather and log statistics about the generated features
         self.get_table_stats()
 
-        # Export sample
+        # Step 3: Export a sample for analysis and verification
         self.export_sample(sample_size=1000)
+        
+        # Log pipeline completion statistics
         end_time = time.time()
         self.logger.info("=" * 60)
         self.logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -423,9 +497,16 @@ class FeatureEngineering:
 
 
 def main():
+    """
+    Main entry point for the feature engineering script.
+    
+    This function is called by the Airflow DAG to execute the feature engineering pipeline.
+    It creates a FeatureEngineering instance and runs the complete feature creation process.
+    """
     feature_engineer = FeatureEngineering()
     feature_engineer.run()
 
 
 if __name__ == "__main__":
+    # Allow the script to be run directly for testing or development
     main()

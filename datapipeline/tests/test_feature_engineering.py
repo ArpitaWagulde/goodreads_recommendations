@@ -1,3 +1,21 @@
+"""
+Unit Tests for Feature Engineering Module
+
+This module contains comprehensive unit tests for the FeatureEngineering class,
+testing feature creation functionality, error handling, and BigQuery integration.
+
+Test Coverage:
+- Feature creation and SQL query generation
+- Table statistics collection
+- Sample data export functionality
+- Error handling and logging
+- BigQuery client interactions
+- Pipeline execution flow
+
+Author: Goodreads Recommendation Team
+Date: 2025
+"""
+
 import pytest
 import os
 from unittest.mock import Mock, patch
@@ -7,7 +25,12 @@ from datapipeline.scripts.feature_engineering import FeatureEngineering
 
 
 def test_initialization():
-    """Test class initialization"""
+    """
+    Test class initialization and configuration.
+    
+    This test verifies that the FeatureEngineering class initializes correctly
+    with proper configuration values and environment setup.
+    """
     with patch.dict(os.environ, {'AIRFLOW_HOME': '/tmp/test'}):
         with patch('os.path.exists', return_value=True):
             with patch('datapipeline.scripts.feature_engineering.bigquery.Client') as mock_client:

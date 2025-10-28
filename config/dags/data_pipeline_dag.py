@@ -1,3 +1,23 @@
+"""
+Apache Airflow DAG for Goodreads Recommendation System Data Pipeline
+
+This DAG orchestrates the complete data processing pipeline for the Goodreads
+recommendation system, including data validation, cleaning, feature engineering,
+normalization, and data versioning.
+
+Pipeline Flow:
+1. Data Reading & Validation - Extract data from BigQuery and validate quality
+2. Data Cleaning - Clean and standardize raw data
+3. Post-Cleaning Validation - Validate cleaned data quality
+4. Feature Engineering - Create ML features from cleaned data
+5. Data Normalization - Normalize features for ML algorithms
+6. Staging Table Promotion - Move staging tables to production
+7. Data Versioning - Track data changes with DVC
+
+Author: Goodreads Recommendation Team
+Date: 2025
+"""
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
@@ -8,6 +28,7 @@ from airflow.utils.email import send_email
 import pytest
 import logging
 
+# Import pipeline modules
 from datapipeline.scripts.data_cleaning import main as data_cleaning_main
 from datapipeline.scripts.feature_engineering import main as feature_engg_main
 from datapipeline.scripts.normalization import main as normalization_main
@@ -16,16 +37,22 @@ from datapipeline.scripts.promote_staging_tables import main as promote_staging_
 from datapipeline.scripts.feature_metadata import main as feature_metadata_main
 from datapipeline.scripts.train_test_val import main as train_test_split_main
 
+# Default arguments for all DAG tasks
 default_args = {
-    'owner': 'admin',
-    'start_date': datetime(2025, 1, 18),
-    'retries': 0,
-    'retry_delay': timedelta(minutes=2),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    
+    'owner': 'admin',                    # DAG owner
+    'start_date': datetime(2025, 1, 18), # DAG start date
+    'retries': 0,                        # Number of retries on failure
+    'retry_delay': timedelta(minutes=2), # Delay between retries
+    'email_on_failure': False,           # Disable email on failure (handled by callbacks)
+    'email_on_retry': False,             # Disable email on retry
 }
 def send_failure_email(context):
+    """
+    Send email notification when a DAG task fails.
+    
+    Args:
+        context: Airflow task context containing failure information
+    """
     task_instance = context.get('task_instance')
     dag_id = context.get('dag').dag_id
     task_id = task_instance.task_id
@@ -40,6 +67,12 @@ def send_failure_email(context):
     send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
 
 def send_success_email(context):
+    """
+    Send email notification when a DAG completes successfully.
+    
+    Args:
+        context: Airflow task context containing success information
+    """
     dag_id = context.get('dag').dag_id
     execution_date = context.get('execution_date')
     subject = f"[Airflow] DAG {dag_id} Succeeded"
@@ -49,14 +82,25 @@ def send_success_email(context):
     send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
     
 def log_query_results(**kwargs):
+    """
+    Log the results from the BigQuery data reading task.
+    
+    This function retrieves the job ID from the previous task and logs
+    the query results for monitoring and debugging purposes.
+    
+    Args:
+        **kwargs: Airflow task context
+    """
     ti = kwargs['ti']
     job_id = ti.xcom_pull(task_ids='read_data_from_bigquery')
 
     from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 
+    # Get BigQuery client using the configured connection
     hook = BigQueryHook(gcp_conn_id="goodreads_conn")
     client = hook.get_client()
 
+    # Retrieve and log query results
     query_job = client.get_job(job_id)
     rows = list(query_job.result())
 

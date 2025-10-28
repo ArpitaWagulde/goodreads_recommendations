@@ -1,6 +1,19 @@
 """
-Anomaly Detection using BigQuery for Goodreads Data Pipeline
-Performs data quality validation using BigQuery SQL queries
+Anomaly Detection and Data Quality Validation Module for Goodreads Data Pipeline
+
+This module performs comprehensive data quality validation using BigQuery SQL queries.
+It implements a two-stage validation system: pre-cleaning and post-cleaning validation
+to ensure data integrity throughout the entire processing workflow.
+
+Key Features:
+- Pre-cleaning validation: Validates source data before any processing
+- Post-cleaning validation: Validates cleaned data after processing
+- Zero tolerance policy: Any violations stop the pipeline
+- Email notifications: Automatic failure alerts to stakeholders
+- BigQuery integration: Scalable validation using SQL queries
+
+Author: Goodreads Recommendation Team
+Date: 2025
 """
 
 import os
@@ -14,34 +27,51 @@ from datetime import datetime
 class AnomalyDetection:
     
     def __init__(self):
-        # Set Google Application Credentials
+        """
+        Initialize the AnomalyDetection class with BigQuery client and configuration.
+        
+        Sets up:
+        - Google Cloud credentials for BigQuery access
+        - Logging configuration for anomaly detection operations
+        - BigQuery client and project information
+        - Dataset reference for validation queries
+        """
+        # Set Google Application Credentials for BigQuery access
+        # Uses AIRFLOW_HOME environment variable to locate credentials file
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("AIRFLOW_HOME")+"/gcp_credentials.json"
         
-        # Logging configuration
+        # Initialize logging for anomaly detection operations
         self.logger = get_logger("anomaly_detection")
         
-        # BigQuery client
+        # Initialize BigQuery client and get project information
         self.client = bigquery.Client()
         self.project_id = self.client.project
         self.dataset = "books"
 
     def validate_data_quality(self, use_cleaned_tables=False):
         """
-        Data quality validation using BigQuery SQL queries
+        Perform comprehensive data quality validation using BigQuery SQL queries.
+        
         Args:
             use_cleaned_tables (bool): If True, validate cleaned tables; if False, validate source tables
+            
+        Returns:
+            bool: True if all validations pass, False otherwise
+            
+        This method orchestrates validation of both books and interactions tables
+        and implements a zero-tolerance policy - any violations stop the pipeline.
         """
         try:
             validation_type = "cleaned" if use_cleaned_tables else "source"
             self.logger.info(f"Starting BigQuery data validation for {validation_type} tables...")
             
-            # Validate books table
+            # Validate books table using appropriate validation rules
             books_success = self.validate_books_with_bigquery(use_cleaned_tables)
             
-            # Validate interactions table  
+            # Validate interactions table using appropriate validation rules
             interactions_success = self.validate_interactions_with_bigquery(use_cleaned_tables)
             
-            # Check overall success
+            # Check overall success - zero tolerance policy
             if not books_success or not interactions_success:
                 self.send_failure_email(f"Data validation failed for {validation_type} tables - check logs for details")
                 raise Exception(f"Data validation failed for {validation_type} tables - critical issues found")
@@ -55,9 +85,16 @@ class AnomalyDetection:
 
     def get_table_structure(self, table_name):
         """
-        Get table structure from BigQuery INFORMATION_SCHEMA
+        Get table structure information from BigQuery INFORMATION_SCHEMA.
+        
+        Args:
+            table_name (str): Name of the table to get structure for
+            
+        Returns:
+            pandas.DataFrame: DataFrame with column information, or None if error
         """
         try:
+            # Query BigQuery INFORMATION_SCHEMA to get column details
             columns_info = self.client.query(f"""
                 SELECT column_name, data_type
                 FROM `{self.project_id}.{self.dataset}.INFORMATION_SCHEMA.COLUMNS`
@@ -73,9 +110,16 @@ class AnomalyDetection:
 
     def validate_books_with_bigquery(self, use_cleaned_tables=False):
         """
-        Validate books table using BigQuery SQL queries
+        Validate books table using BigQuery SQL queries with appropriate validation rules.
+        
         Args:
             use_cleaned_tables (bool): If True, validate cleaned table; if False, validate source table
+            
+        Returns:
+            bool: True if all validations pass, False otherwise
+            
+        This method applies different validation rules based on whether it's validating
+        source data (pre-cleaning) or cleaned data (post-cleaning).
         """
         try:
             # Choose table based on validation type
@@ -285,11 +329,18 @@ class AnomalyDetection:
 
     def send_failure_email(self, message):
         """
-        Send email notification for validation failures
+        Send email notification for validation failures to alert stakeholders.
+        
+        Args:
+            message (str): Error message describing the validation failure
+            
+        This method sends an HTML email notification when data validation fails,
+        providing details about the failure and required actions.
         """
         try:
             subject = "[CRITICAL] Data Validation Failed - Goodreads Pipeline"
             
+            # Create HTML email content with failure details
             html_content = f"""
             <h2>Data Validation Failure</h2>
             <p><strong>Pipeline:</strong> Goodreads Recommendation System</p>
@@ -300,6 +351,7 @@ class AnomalyDetection:
             <p><em>This is an automated alert from the Goodreads Data Pipeline.</em></p>
             """
             
+            # Send email notification to configured recipient
             send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
             
             self.logger.info("Validation failure email sent")
@@ -309,17 +361,26 @@ class AnomalyDetection:
 
     def run_pre_validation(self):
         """
-        Run pre-cleaning validation
+        Execute pre-cleaning data validation pipeline.
+        
+        This method validates source data before any cleaning operations to ensure
+        basic data integrity and identify critical issues early in the pipeline.
+        
+        Returns:
+            bool: True if validation passes, raises exception if it fails
         """
         try:
+            # Initialize pre-cleaning validation with logging
             self.logger.info("=" * 60)
             self.logger.info("Pre-Cleaning Data Validation Pipeline")
             start_time = time.time()
             self.logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             self.logger.info("=" * 60)
             
+            # Validate source tables before any processing
             result = self.validate_data_quality(use_cleaned_tables=False)
             
+            # Log completion statistics
             end_time = time.time()
             self.logger.info("=" * 60)
             self.logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -334,17 +395,26 @@ class AnomalyDetection:
 
     def run_post_validation(self):
         """
-        Run post-cleaning validation
+        Execute post-cleaning data validation pipeline.
+        
+        This method validates cleaned data after processing to ensure the cleaning
+        operations were successful and the data meets quality standards for ML training.
+        
+        Returns:
+            bool: True if validation passes, raises exception if it fails
         """
         try:
+            # Initialize post-cleaning validation with logging
             self.logger.info("=" * 60)
             self.logger.info("Post-Cleaning Data Validation Pipeline")
             start_time = time.time()
             self.logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             self.logger.info("=" * 60)
             
+            # Validate cleaned tables after processing
             result = self.validate_data_quality(use_cleaned_tables=True)
             
+            # Log completion statistics
             end_time = time.time()
             self.logger.info("=" * 60)
             self.logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -359,23 +429,39 @@ class AnomalyDetection:
 
 def main_pre_validation():
     """
-    Pre-cleaning validation function - validates source tables
+    Pre-cleaning validation function - validates source tables.
+    
+    This function is called by the Airflow DAG to validate source data
+    before any cleaning operations begin.
+    
+    Returns:
+        bool: True if validation passes, raises exception if it fails
     """
     anomaly_detector = AnomalyDetection()
     return anomaly_detector.run_pre_validation()
 
 def main_post_validation():
     """
-    Post-cleaning validation function - validates cleaned tables
+    Post-cleaning validation function - validates cleaned tables.
+    
+    This function is called by the Airflow DAG to validate cleaned data
+    after processing to ensure quality standards are met.
+    
+    Returns:
+        bool: True if validation passes, raises exception if it fails
     """
     anomaly_detector = AnomalyDetection()
     return anomaly_detector.run_post_validation()
 
 def main(use_cleaned_tables=False):
     """
-    Main function called by Airflow DAG
+    Main function called by Airflow DAG for data validation.
+    
     Args:
         use_cleaned_tables (bool): If True, validate cleaned tables; if False, validate source tables
+        
+    Returns:
+        bool: True if validation passes, raises exception if it fails
     """
     anomaly_detector = AnomalyDetection()
     if use_cleaned_tables:
@@ -384,4 +470,5 @@ def main(use_cleaned_tables=False):
         return anomaly_detector.run_pre_validation()
 
 if __name__ == "__main__":
+    # Allow the script to be run directly for testing or development
     main()

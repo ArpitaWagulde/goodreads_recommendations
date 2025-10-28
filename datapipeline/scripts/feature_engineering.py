@@ -21,9 +21,9 @@ class FeatureEngineering:
         self.dataset_id = "books"
 
         # Source and destination tables
-        self.books_table = f"{self.project_id}.{self.dataset_id}.goodreads_books_cleaned"
-        self.interactions_table = f"{self.project_id}.{self.dataset_id}.goodreads_interactions_cleaned"
-        self.destination_table = f"{self.project_id}.{self.dataset_id}.goodreads_features_cleaned"
+        self.books_table = f"{self.project_id}.{self.dataset_id}.goodreads_books_cleaned_staging"
+        self.interactions_table = f"{self.project_id}.{self.dataset_id}.goodreads_interactions_cleaned_staging"
+        self.destination_table = f"{self.project_id}.{self.dataset_id}.goodreads_features_cleaned_staging"
 
         # Feature engineering parameters
         self.MIN_READING_DAYS = 1

@@ -50,6 +50,7 @@ pip install -e .
 The variable set is only for this instance of terminal and will not affect others.
 ```bash
 export AIRFLOW_HOME=. [point this to the absolute path of config folder of the cloned repository]
+export AIRFLOW__SMTP__SMTP_PASSWORD=<SHARED_PASSWORD>
 ```
 
 - Request access to gcp credentials [Access credentials will be shared per user basis].
@@ -70,11 +71,22 @@ http://localhost:8080
 
 Login using the admin credentials
 
-**Add Connection on Airflow UI:**
+**Add GCP Connection on Airflow UI:**
 1. Admin >> Connections
 2. Add Connection
 3. Connection ID : goodreads_conn ,  Connection Type : Google Cloud
 4. Paste the shared GCP access credentials json at Extra Fields JSON
+
+**Add Email Connection on Airflow UI:**
+1. Admin >> Connections
+2. Add Connection
+3. Connection ID : smtp_default ,  Connection Type : Email
+4. Add the following values in standard field,
+    - Host : smtp.gmail.com
+    - Login: <SHARED_EMAIL>
+    - Port: 587
+    - Password : <SHARED_PASSWORD>
+5. Add the shared JSON in the Extra fields JSON 
 
 **Run the DAG:**
 

@@ -50,8 +50,6 @@ pip install -e .
 The variable set is only for this instance of terminal and will not affect others.
 ```bash
 export AIRFLOW_HOME=. [point this to the absolute path of config folder of the cloned repository]
-export AIRFLOW__SMTP__SMTP_MAIL_FROM=<SHARED_EMAIL>
-export AIRFLOW__SMTP__SMTP_USER=<SHARED_EMAIL>
 export AIRFLOW__SMTP__SMTP_PASSWORD=<SHARED_PASSWORD>
 ```
 
@@ -85,7 +83,7 @@ Login using the admin credentials
 3. Connection ID : smtp_default ,  Connection Type : Email
 4. Add the following values in standard field,
     - Host : smtp.gmail.com
-    - Login: <Shared_EMAIL>
+    - Login: <SHARED_EMAIL>
     - Port: 587
     - Password : <SHARED_PASSWORD>
 5. Add the shared JSON in the Extra fields JSON 

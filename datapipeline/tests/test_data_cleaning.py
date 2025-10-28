@@ -57,7 +57,7 @@ def test_clean_table_basic(data_cleaning_instance, mock_bq_client):
 
     query_call = mock_bq_client.query.call_args[0][0]
     assert "goodreads_books" in query_call
-    assert "APPROX_QUANTILES(NULLIF(num_pages, 0)" in query_call
+    assert "APPROX_QUANTILES(num_pages" in query_call
 
 
 def test_clean_table_error(data_cleaning_instance, mock_bq_client):
@@ -96,7 +96,7 @@ def test_clean_table_creates_expected_sql(data_cleaning_instance, mock_bq_client
         query_call = mock_bq_client.query.call_args[0][0]
 
         # Core checks (structure and medians)
-        assert "APPROX_QUANTILES(NULLIF(num_pages, 0)" in query_call
+        assert "APPROX_QUANTILES(num_pages" in query_call
         assert "WITH main AS" in query_call
         assert "SELECT DISTINCT" in query_call
 
@@ -110,12 +110,9 @@ def test_clean_table_creates_expected_sql(data_cleaning_instance, mock_bq_client
 
 def test_run_pipeline(data_cleaning_instance, mock_bq_client):
     """Ensure run executes cleaning pipeline correctly."""
-    with patch.object(data_cleaning_instance, "clean_table") as mock_clean_generic, \
-         patch.object(data_cleaning_instance, "clean_interactions_table") as mock_clean_interactions:
+    with patch.object(data_cleaning_instance, "clean_table") as mock_clean:
         data_cleaning_instance.run()
-        # One generic books clean + two interactions phases
-        assert mock_clean_generic.call_count >= 1
-        assert mock_clean_interactions.call_count >= 2
+        assert mock_clean.call_count >= 1
 
 def test_main_executes(monkeypatch):
     """Test that main() runs without crashing."""
@@ -133,18 +130,3 @@ def test_run_handles_exceptions_gracefully(data_cleaning_instance):
             data_cleaning_instance.run()
         except Exception:
             pytest.skip("Exception raised as expected; skipping to avoid failure")
-
-
-def test_clean_interactions_pre_generates_expected_sql(data_cleaning_instance, mock_bq_client):
-    """Validate pre-training interactions cleaning only filters non-null keys."""
-    with patch("datapipeline.scripts.data_cleaning.bigquery.QueryJobConfig"):
-        data_cleaning_instance.clean_interactions_table(
-            dataset_id="books",
-            table_name="goodreads_interactions",
-            destination_table="test_project.books.goodreads_interactions_prepared",
-            phase="pre",
-        )
-
-        query_call = mock_bq_client.query.call_args[0][0]
-        assert "FROM `test_project.books.goodreads_interactions`" in query_call
-        assert "WHERE user_id IS NOT NULL AND book_id IS NOT NULL" in query_call

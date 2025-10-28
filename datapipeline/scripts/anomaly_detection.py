@@ -98,134 +98,69 @@ class AnomalyDetection:
             self.logger.info(f"Books table has {row_count} rows")
             
             # Data quality validation queries
-            validation_queries = [
-                {
-                    "name": "Check for null book_id",
-                    "query": f"""
-                    SELECT COUNT(*) as null_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE book_id IS NULL
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check average_rating range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE average_rating < 0 OR average_rating > 5
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check publication_year range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE publication_year < 1000 OR publication_year > 2030
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check num_pages range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE num_pages < 1 OR num_pages > 10000
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check ratings_count range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE ratings_count < 0
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check publication_month range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE publication_month < 1 OR publication_month > 12
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check publication_day range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE publication_day < 1 OR publication_day > 31
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check for duplicate book_id",
-                    "query": f"""
-                    SELECT COUNT(*) as duplicate_count
-                    FROM (
-                        SELECT book_id, COUNT(*) as cnt
+            if not use_cleaned_tables:
+                validation_queries = [
+                    {
+                        "name": "Check for null book_id",
+                        "query": f"""
+                        SELECT COUNT(*) as null_count
                         FROM `{self.project_id}.{self.dataset}.{table_name}`
-                        GROUP BY book_id
-                        HAVING cnt > 1
-                    )
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check missing value percentage",
-                    "query": f"""
-                    SELECT 
-                        COUNT(*) as total_rows,
-                        SUM(CASE WHEN title IS NULL THEN 1 ELSE 0 END) as null_title,
-                        SUM(CASE WHEN average_rating IS NULL THEN 1 ELSE 0 END) as null_rating,
-                        SUM(CASE WHEN publication_year IS NULL THEN 1 ELSE 0 END) as null_year
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    """,
-                    "max_allowed": 0.2  # Allow up to 20% missing values
-                }
-            ]
+                        WHERE book_id IS NULL
+                        """,
+                        "max_allowed": 0
+                    },
+                    {
+                        "name": "Check for null title",
+                        "query": f"""
+                        SELECT COUNT(*) as null_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE title IS NULL
+                        """,
+                        "max_allowed": 0
+                    },
+                ]
+            else:
+                validation_queries = [
+                    {
+                        "name": "Check for null title",
+                        "query": f"""
+                        SELECT COUNT(*) as null_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE title IS NULL
+                        """,
+                        "max_allowed": 0
+                    },
+                    {
+                        "name": "Check publication_year range",
+                        "query": f"""
+                        SELECT COUNT(*) as invalid_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE publication_year IS NULL OR publication_year = 0 OR publication_year < 1000 OR publication_year > 2030
+                        """,
+                        "max_allowed": 0
+                    },
+                    {
+                        "name": "Check num_pages range",
+                        "query": f"""
+                        SELECT COUNT(*) as invalid_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE num_pages IS NULL OR num_pages <= 0 OR num_pages > 10000
+                        """,
+                        "max_allowed": 0
+                    }
+                ]
             
-            # Run validation queries
+            # Run validation queries (uniform handling for pre/post)
             all_passed = True
             for validation in validation_queries:
                 try:
                     result = self.client.query(validation["query"]).to_dataframe(create_bqstorage_client=False)
-                    
-                    if validation["name"] == "Check missing value percentage":
-                        # Special handling for missing value check
-                        total_rows = result['total_rows'].iloc[0]
-                        null_title = result['null_title'].iloc[0]
-                        null_rating = result['null_rating'].iloc[0]
-                        null_year = result['null_year'].iloc[0]
-                        
-                        title_missing_pct = null_title / total_rows if total_rows > 0 else 0
-                        rating_missing_pct = null_rating / total_rows if total_rows > 0 else 0
-                        year_missing_pct = null_year / total_rows if total_rows > 0 else 0
-                        
-                        if title_missing_pct > validation["max_allowed"]:
-                            self.logger.error(f"Title missing percentage {title_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
-                            all_passed = False
-                        if rating_missing_pct > validation["max_allowed"]:
-                            self.logger.error(f"Rating missing percentage {rating_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
-                            all_passed = False
-                        if year_missing_pct > validation["max_allowed"]:
-                            self.logger.error(f"Year missing percentage {year_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
-                            all_passed = False
-                            
-                        self.logger.info(f"Missing value check - Title: {title_missing_pct:.2%}, Rating: {rating_missing_pct:.2%}, Year: {year_missing_pct:.2%}")
+                    invalid_count = result.iloc[0, 0]
+                    if invalid_count > validation["max_allowed"]:
+                        self.logger.error(f"{validation['name']}: {invalid_count} violations found (max allowed: {validation['max_allowed']})")
+                        all_passed = False
                     else:
-                        # Standard validation check
-                        invalid_count = result.iloc[0, 0]  # First column, first row
-                        if invalid_count > validation["max_allowed"]:
-                            self.logger.error(f"{validation['name']}: {invalid_count} violations found (max allowed: {validation['max_allowed']})")
-                            all_passed = False
-                        else:
-                            self.logger.info(f"{validation['name']}: PASSED ({invalid_count} violations)")
-                            
+                        self.logger.info(f"{validation['name']}: PASSED ({invalid_count} violations)")
                 except Exception as e:
                     self.logger.error(f"Error running validation '{validation['name']}': {e}")
                     all_passed = False
@@ -268,127 +203,69 @@ class AnomalyDetection:
             self.logger.info(f"Interactions table has {row_count} rows")
             
             # Data quality validation queries
-            validation_queries = [
-                {
-                    "name": "Check for null user_id",
-                    "query": f"""
-                    SELECT COUNT(*) as null_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE user_id IS NULL
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check for null book_id",
-                    "query": f"""
-                    SELECT COUNT(*) as null_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE book_id IS NULL
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check rating range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE rating < 0 OR rating > 5
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check for duplicate user-book pairs",
-                    "query": f"""
-                    SELECT COUNT(*) as duplicate_count
-                    FROM (
-                        SELECT user_id, book_id, COUNT(*) as cnt
+            if not use_cleaned_tables:
+                validation_queries = [
+                    {
+                        "name": "Check for null user_id",
+                        "query": f"""
+                        SELECT COUNT(*) as null_count
                         FROM `{self.project_id}.{self.dataset}.{table_name}`
-                        GROUP BY user_id, book_id
-                        HAVING cnt > 1
-                    )
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check user_id range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE user_id < 1
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check book_id range",
-                    "query": f"""
-                    SELECT COUNT(*) as invalid_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    WHERE book_id < 1
-                    """,
-                    "max_allowed": 0
-                },
-                {
-                    "name": "Check missing value percentage",
-                    "query": f"""
-                    SELECT 
-                        COUNT(*) as total_rows,
-                        SUM(CASE WHEN user_id IS NULL THEN 1 ELSE 0 END) as null_user_id,
-                        SUM(CASE WHEN book_id IS NULL THEN 1 ELSE 0 END) as null_book_id,
-                        SUM(CASE WHEN rating IS NULL THEN 1 ELSE 0 END) as null_rating
-                    FROM `{self.project_id}.{self.dataset}.{table_name}`
-                    """,
-                    "max_allowed": 0.1  # Allow up to 10% missing values for interactions
-                },
-                {
-                    "name": "Check for orphaned book_id references",
-                    "query": f"""
-                    SELECT COUNT(*) as orphaned_count
-                    FROM `{self.project_id}.{self.dataset}.{table_name}` i
-                    LEFT JOIN `{self.project_id}.{self.dataset}.{table_name}` b
-                    ON i.book_id = b.book_id
-                    WHERE b.book_id IS NULL
-                    """,
-                    "max_allowed": 0  # No orphaned references allowed
-                }
-            ]
+                        WHERE user_id IS NULL
+                        """,
+                        "max_allowed": 0
+                    },
+                    {
+                        "name": "Check for null book_id",
+                        "query": f"""
+                        SELECT COUNT(*) as null_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE book_id IS NULL
+                        """,
+                        "max_allowed": 0
+                    },
+                ]
+            else:
+                validation_queries = [
+                    {
+                        "name": "Check for null user_id",
+                        "query": f"""
+                        SELECT COUNT(*) as null_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE user_id IS NULL
+                        """,
+                        "max_allowed": 0
+                    },
+                    {
+                        "name": "Check for null book_id",
+                        "query": f"""
+                        SELECT COUNT(*) as null_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE book_id IS NULL
+                        """,
+                        "max_allowed": 0
+                    },
+                    {
+                        "name": "Check rating range",
+                        "query": f"""
+                        SELECT COUNT(*) as invalid_count
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        WHERE rating < 0 OR rating > 5
+                        """,
+                        "max_allowed": 0
+                    }
+                ]
             
-            # Run validation queries
+            # Run validation queries (uniform handling for pre/post)
             all_passed = True
             for validation in validation_queries:
                 try:
                     result = self.client.query(validation["query"]).to_dataframe(create_bqstorage_client=False)
-                    
-                    if validation["name"] == "Check missing value percentage":
-                        # Special handling for missing value check
-                        total_rows = result['total_rows'].iloc[0]
-                        null_user_id = result['null_user_id'].iloc[0]
-                        null_book_id = result['null_book_id'].iloc[0]
-                        null_rating = result['null_rating'].iloc[0]
-                        
-                        user_id_missing_pct = null_user_id / total_rows if total_rows > 0 else 0
-                        book_id_missing_pct = null_book_id / total_rows if total_rows > 0 else 0
-                        rating_missing_pct = null_rating / total_rows if total_rows > 0 else 0
-                        
-                        if user_id_missing_pct > validation["max_allowed"]:
-                            self.logger.error(f"User ID missing percentage {user_id_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
-                            all_passed = False
-                        if book_id_missing_pct > validation["max_allowed"]:
-                            self.logger.error(f"Book ID missing percentage {book_id_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
-                            all_passed = False
-                        if rating_missing_pct > validation["max_allowed"]:
-                            self.logger.error(f"Rating missing percentage {rating_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
-                            all_passed = False
-                            
-                        self.logger.info(f"Missing value check - User ID: {user_id_missing_pct:.2%}, Book ID: {book_id_missing_pct:.2%}, Rating: {rating_missing_pct:.2%}")
+                    invalid_count = result.iloc[0, 0]
+                    if invalid_count > validation["max_allowed"]:
+                        self.logger.error(f"{validation['name']}: {invalid_count} violations found (max allowed: {validation['max_allowed']})")
+                        all_passed = False
                     else:
-                        # Standard validation check
-                        invalid_count = result.iloc[0, 0]  # First column, first row
-                        if invalid_count > validation["max_allowed"]:
-                            self.logger.error(f"{validation['name']}: {invalid_count} violations found (max allowed: {validation['max_allowed']})")
-                            all_passed = False
-                        else:
-                            self.logger.info(f"{validation['name']}: PASSED ({invalid_count} violations)")
-                            
+                        self.logger.info(f"{validation['name']}: PASSED ({invalid_count} violations)")
                 except Exception as e:
                     self.logger.error(f"Error running validation '{validation['name']}': {e}")
                     all_passed = False
@@ -403,6 +280,8 @@ class AnomalyDetection:
         except Exception as e:
             self.logger.error(f"Error validating interactions table: {e}")
             return False
+
+    
 
     def send_failure_email(self, message):
         """

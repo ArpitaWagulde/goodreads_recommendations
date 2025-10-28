@@ -47,7 +47,7 @@ class DataCleaning:
 
                 if apply_global_median and col in self.median_numeric_cols:
                     select_exprs.append(
-                        f"COALESCE({col}, global_medians.{col}_median) AS {col}"
+                        f"COALESCE(NULLIF({col}, 0), global_medians.{col}_median) AS {col}"
                     )
                 elif col in string_cols:
                     select_exprs.append(f"COALESCE(NULLIF(TRIM({col}), ''), 'Unknown') AS {col}_clean")
@@ -71,7 +71,7 @@ class DataCleaning:
                 ),
                 global_medians AS (
                     SELECT
-                        {', '.join([f'APPROX_QUANTILES({col}, 2)[OFFSET(1)] AS {col}_median' for col in self.median_numeric_cols])}
+                        {', '.join([f'APPROX_QUANTILES(NULLIF({col}, 0), 2)[OFFSET(1)] AS {col}_median' for col in self.median_numeric_cols])}
                     FROM main
                 )
                 SELECT DISTINCT

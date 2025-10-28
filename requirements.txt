@@ -13,3 +13,4 @@ pytest
 dvc
 great-expectations
 dvc-gs
+gender-guesser

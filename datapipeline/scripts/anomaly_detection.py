@@ -1,11 +1,10 @@
 """
-Anomaly Detection using Great Expectations for Goodreads Data Pipeline
-Based on DataCamp tutorial approach
+Anomaly Detection using BigQuery for Goodreads Data Pipeline
+Performs data quality validation using BigQuery SQL queries
 """
 
 import os
 import pandas as pd
-import great_expectations as gx
 from google.cloud import bigquery
 from airflow.utils.email import send_email
 from datapipeline.scripts.logger_setup import get_logger
@@ -28,22 +27,19 @@ class AnomalyDetection:
 
     def validate_data_quality(self, use_cleaned_tables=False):
         """
-        Data quality validation using Great Expectations
+        Data quality validation using BigQuery SQL queries
         Args:
             use_cleaned_tables (bool): If True, validate cleaned tables; if False, validate source tables
         """
         try:
             validation_type = "cleaned" if use_cleaned_tables else "source"
-            self.logger.info(f"Starting Great Expectations data validation for {validation_type} tables...")
-            
-            # Initialize Great Expectations context
-            context = gx.get_context()
+            self.logger.info(f"Starting BigQuery data validation for {validation_type} tables...")
             
             # Validate books table
-            books_success = self.validate_books_with_gx(context, use_cleaned_tables)
+            books_success = self.validate_books_with_bigquery(use_cleaned_tables)
             
             # Validate interactions table  
-            interactions_success = self.validate_interactions_with_gx(context, use_cleaned_tables)
+            interactions_success = self.validate_interactions_with_bigquery(use_cleaned_tables)
             
             # Check overall success
             if not books_success or not interactions_success:
@@ -75,131 +71,166 @@ class AnomalyDetection:
             self.logger.error(f"Error fetching table structure for {table_name}: {e}")
             return None
 
-    def validate_books_with_gx(self, context, use_cleaned_tables=False):
+    def validate_books_with_bigquery(self, use_cleaned_tables=False):
         """
-        Validate books table using Great Expectations with dynamic schema
+        Validate books table using BigQuery SQL queries
         Args:
             use_cleaned_tables (bool): If True, validate cleaned table; if False, validate source table
         """
         try:
             # Choose table based on validation type
-            table_name = "goodreads_books_cleaned" if use_cleaned_tables else "goodreads_books_mystery_thriller_crime"
+            table_name = "goodreads_books_cleaned_staging" if use_cleaned_tables else "goodreads_books_mystery_thriller_crime"
             
-            # Get table structure
-            columns_info = self.get_table_structure(table_name)
-            if columns_info is None:
-                return False
+            self.logger.info(f"Validating books table: {table_name}")
             
-            query = f"""
-            SELECT * FROM `{self.project_id}.{self.dataset}.{table_name}`
+            # Check if table exists and get row count
+            count_query = f"""
+            SELECT COUNT(*) as row_count
+            FROM `{self.project_id}.{self.dataset}.{table_name}`
             """
-            df = self.client.query(query).to_dataframe(create_bqstorage_client=False)
+            count_result = self.client.query(count_query).to_dataframe(create_bqstorage_client=False)
+            row_count = count_result['row_count'].iloc[0]
             
-            if df.empty:
+            if row_count == 0:
                 self.logger.error("Books table is empty")
                 return False
             
-            self.logger.info(f"Validating books table with Great Expectations: {len(df)} rows")
-        
-            # Create datasource configuration
-            datasource_config = {
-                "name": "books_datasource",
-                "class_name": "Datasource",
-                "execution_engine": {
-                    "class_name": "PandasExecutionEngine"
+            self.logger.info(f"Books table has {row_count} rows")
+            
+            # Data quality validation queries
+            validation_queries = [
+                {
+                    "name": "Check for null book_id",
+                    "query": f"""
+                    SELECT COUNT(*) as null_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE book_id IS NULL
+                    """,
+                    "max_allowed": 0
                 },
-                "data_connectors": {
-                    "default_runtime_data_connector": {
-                        "class_name": "RuntimeDataConnector",
-                        "batch_identifiers": ["default_identifier_name"]
-                    }
-                }
-            }
-            
-            # Add datasource
-            try:
-                context.add_datasource(**datasource_config)
-            except:
-                pass  # Datasource might already exist
-            
-            # Create expectation suite
-            suite = context.create_expectation_suite("books_expectations", overwrite_existing=True)
-            
-            # Create batch request
-            batch_request = {
-                "datasource_name": "books_datasource",
-                "data_connector_name": "default_runtime_data_connector",
-                "data_asset_name": "books_data",
-                "runtime_parameters": {
-                    "batch_data": df
+                {
+                    "name": "Check average_rating range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE average_rating < 0 OR average_rating > 5
+                    """,
+                    "max_allowed": 0
                 },
-                "batch_identifiers": {
-                    "default_identifier_name": "default_identifier"
+                {
+                    "name": "Check publication_year range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE publication_year < 1000 OR publication_year > 2030
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check num_pages range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE num_pages < 1 OR num_pages > 10000
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check ratings_count range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE ratings_count < 0
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check publication_month range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE publication_month < 1 OR publication_month > 12
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check publication_day range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE publication_day < 1 OR publication_day > 31
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check for duplicate book_id",
+                    "query": f"""
+                    SELECT COUNT(*) as duplicate_count
+                    FROM (
+                        SELECT book_id, COUNT(*) as cnt
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        GROUP BY book_id
+                        HAVING cnt > 1
+                    )
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check missing value percentage",
+                    "query": f"""
+                    SELECT 
+                        COUNT(*) as total_rows,
+                        SUM(CASE WHEN title IS NULL THEN 1 ELSE 0 END) as null_title,
+                        SUM(CASE WHEN average_rating IS NULL THEN 1 ELSE 0 END) as null_rating,
+                        SUM(CASE WHEN publication_year IS NULL THEN 1 ELSE 0 END) as null_year
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    """,
+                    "max_allowed": 0.2  # Allow up to 20% missing values
                 }
-            }
+            ]
             
-            # Get validator
-            validator = context.get_validator(
-                batch_request=batch_request, 
-                expectation_suite_name="books_expectations"
-            )
-        
-            # Add expectations based on actual table structure
-            for _, row in columns_info.iterrows():
-                col_name = row['column_name']
-                data_type = row['data_type']
-                
-                # Column existence
-                validator.expect_column_to_exist(col_name)
-                
-                # Data type expectations based on BigQuery types
-                if data_type in ('STRING', 'CHAR', 'TEXT'):
-                    validator.expect_column_values_to_be_of_type(col_name, "str")
-                elif data_type == 'INT64':
-                    validator.expect_column_values_to_be_of_type(col_name, "int64")
-                elif data_type == 'FLOAT64':
-                    validator.expect_column_values_to_be_of_type(col_name, "float64")
-                elif data_type == 'BOOL':
-                    validator.expect_column_values_to_be_of_type(col_name, "bool")
+            # Run validation queries
+            all_passed = True
+            for validation in validation_queries:
+                try:
+                    result = self.client.query(validation["query"]).to_dataframe(create_bqstorage_client=False)
+                    
+                    if validation["name"] == "Check missing value percentage":
+                        # Special handling for missing value check
+                        total_rows = result['total_rows'].iloc[0]
+                        null_title = result['null_title'].iloc[0]
+                        null_rating = result['null_rating'].iloc[0]
+                        null_year = result['null_year'].iloc[0]
+                        
+                        title_missing_pct = null_title / total_rows if total_rows > 0 else 0
+                        rating_missing_pct = null_rating / total_rows if total_rows > 0 else 0
+                        year_missing_pct = null_year / total_rows if total_rows > 0 else 0
+                        
+                        if title_missing_pct > validation["max_allowed"]:
+                            self.logger.error(f"Title missing percentage {title_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
+                            all_passed = False
+                        if rating_missing_pct > validation["max_allowed"]:
+                            self.logger.error(f"Rating missing percentage {rating_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
+                            all_passed = False
+                        if year_missing_pct > validation["max_allowed"]:
+                            self.logger.error(f"Year missing percentage {year_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
+                            all_passed = False
+                            
+                        self.logger.info(f"Missing value check - Title: {title_missing_pct:.2%}, Rating: {rating_missing_pct:.2%}, Year: {year_missing_pct:.2%}")
+                    else:
+                        # Standard validation check
+                        invalid_count = result.iloc[0, 0]  # First column, first row
+                        if invalid_count > validation["max_allowed"]:
+                            self.logger.error(f"{validation['name']}: {invalid_count} violations found (max allowed: {validation['max_allowed']})")
+                            all_passed = False
+                        else:
+                            self.logger.info(f"{validation['name']}: PASSED ({invalid_count} violations)")
+                            
+                except Exception as e:
+                    self.logger.error(f"Error running validation '{validation['name']}': {e}")
+                    all_passed = False
             
-            # Business rule expectations for specific columns
-            if 'average_rating' in df.columns:
-                validator.expect_column_values_to_be_between("average_rating", min_value=0, max_value=5)
-            if 'publication_year' in df.columns:
-                validator.expect_column_values_to_be_between("publication_year", min_value=1000, max_value=2030)
-            if 'num_pages' in df.columns:
-                validator.expect_column_values_to_be_between("num_pages", min_value=1, max_value=10000)
-            if 'ratings_count' in df.columns:
-                validator.expect_column_values_to_be_between("ratings_count", min_value=0)
-            if 'publication_month' in df.columns:
-                validator.expect_column_values_to_be_between("publication_month", min_value=1, max_value=12)
-            if 'publication_day' in df.columns:
-                validator.expect_column_values_to_be_between("publication_day", min_value=1, max_value=31)
-            
-            # Missing value expectations (allow some missing values)
-            for _, row in columns_info.iterrows():
-                col_name = row['column_name']
-                if col_name in df.columns:
-                    validator.expect_column_values_to_not_be_null(col_name, mostly=0.8)  # Allow 20% missing
-            
-            # Save expectations
-            validator.save_expectation_suite(discard_failed_expectations=False)
-            
-            # Create checkpoint
-            checkpoint = context.add_or_update_checkpoint(
-                name="books_checkpoint",
-                validations=[
-                    {
-                        "batch_request": batch_request,
-                        "expectation_suite_name": "books_expectations"
-                    }
-                ]
-            )
-            
-            # Run validation
-            checkpoint_result = checkpoint.run()
-            
-            if checkpoint_result["success"]:
+            if all_passed:
                 self.logger.info("Books table validation passed")
                 return True
             else:
@@ -210,123 +241,159 @@ class AnomalyDetection:
             self.logger.error(f"Error validating books table: {e}")
             return False
 
-    def validate_interactions_with_gx(self, context, use_cleaned_tables=False):
+    def validate_interactions_with_bigquery(self, use_cleaned_tables=False):
         """
-        Validate interactions table using Great Expectations with dynamic schema
+        Validate interactions table using BigQuery SQL queries
         Args:
             use_cleaned_tables (bool): If True, validate cleaned table; if False, validate source table
         """
         try:
             # Choose table based on validation type
-            table_name = "goodreads_interactions_cleaned" if use_cleaned_tables else "goodreads_interactions_mystery_thriller_crime"
+            table_name = "goodreads_interactions_cleaned_staging" if use_cleaned_tables else "goodreads_interactions_mystery_thriller_crime"
             
-            # Get table structure
-            columns_info = self.get_table_structure(table_name)
-            if columns_info is None:
-                return False
+            self.logger.info(f"Validating interactions table: {table_name}")
             
-            query = f"""
-            SELECT * FROM `{self.project_id}.{self.dataset}.{table_name}`
+            # Check if table exists and get row count
+            count_query = f"""
+            SELECT COUNT(*) as row_count
+            FROM `{self.project_id}.{self.dataset}.{table_name}`
             """
-            df = self.client.query(query).to_dataframe(create_bqstorage_client=False)
+            count_result = self.client.query(count_query).to_dataframe(create_bqstorage_client=False)
+            row_count = count_result['row_count'].iloc[0]
             
-            if df.empty:
+            if row_count == 0:
                 self.logger.error("Interactions table is empty")
                 return False
             
-            self.logger.info(f"Validating interactions table with Great Expectations: {len(df)} rows")
-        
-            # Create datasource configuration
-            datasource_config = {
-                "name": "interactions_datasource",
-                "class_name": "Datasource",
-                "execution_engine": {
-                    "class_name": "PandasExecutionEngine"
+            self.logger.info(f"Interactions table has {row_count} rows")
+            
+            # Data quality validation queries
+            validation_queries = [
+                {
+                    "name": "Check for null user_id",
+                    "query": f"""
+                    SELECT COUNT(*) as null_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE user_id IS NULL
+                    """,
+                    "max_allowed": 0
                 },
-                "data_connectors": {
-                    "default_runtime_data_connector": {
-                        "class_name": "RuntimeDataConnector",
-                        "batch_identifiers": ["default_identifier_name"]
-                    }
-                }
-            }
-            
-            # Add datasource
-            try:
-                context.add_datasource(**datasource_config)
-            except:
-                pass  # Datasource might already exist
-            
-            # Create expectation suite
-            suite = context.create_expectation_suite("interactions_expectations", overwrite_existing=True)
-            
-            # Create batch request
-            batch_request = {
-                "datasource_name": "interactions_datasource",
-                "data_connector_name": "default_runtime_data_connector",
-                "data_asset_name": "interactions_data",
-                "runtime_parameters": {
-                    "batch_data": df
+                {
+                    "name": "Check for null book_id",
+                    "query": f"""
+                    SELECT COUNT(*) as null_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE book_id IS NULL
+                    """,
+                    "max_allowed": 0
                 },
-                "batch_identifiers": {
-                    "default_identifier_name": "default_identifier"
+                {
+                    "name": "Check rating range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE rating < 0 OR rating > 5
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check for duplicate user-book pairs",
+                    "query": f"""
+                    SELECT COUNT(*) as duplicate_count
+                    FROM (
+                        SELECT user_id, book_id, COUNT(*) as cnt
+                        FROM `{self.project_id}.{self.dataset}.{table_name}`
+                        GROUP BY user_id, book_id
+                        HAVING cnt > 1
+                    )
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check user_id range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE user_id < 1
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check book_id range",
+                    "query": f"""
+                    SELECT COUNT(*) as invalid_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    WHERE book_id < 1
+                    """,
+                    "max_allowed": 0
+                },
+                {
+                    "name": "Check missing value percentage",
+                    "query": f"""
+                    SELECT 
+                        COUNT(*) as total_rows,
+                        SUM(CASE WHEN user_id IS NULL THEN 1 ELSE 0 END) as null_user_id,
+                        SUM(CASE WHEN book_id IS NULL THEN 1 ELSE 0 END) as null_book_id,
+                        SUM(CASE WHEN rating IS NULL THEN 1 ELSE 0 END) as null_rating
+                    FROM `{self.project_id}.{self.dataset}.{table_name}`
+                    """,
+                    "max_allowed": 0.1  # Allow up to 10% missing values for interactions
+                },
+                {
+                    "name": "Check for orphaned book_id references",
+                    "query": f"""
+                    SELECT COUNT(*) as orphaned_count
+                    FROM `{self.project_id}.{self.dataset}.{table_name}` i
+                    LEFT JOIN `{self.project_id}.{self.dataset}.{table_name}` b
+                    ON i.book_id = b.book_id
+                    WHERE b.book_id IS NULL
+                    """,
+                    "max_allowed": 0  # No orphaned references allowed
                 }
-            }
+            ]
             
-            # Get validator
-            validator = context.get_validator(
-                batch_request=batch_request, 
-                expectation_suite_name="interactions_expectations"
-            )
+            # Run validation queries
+            all_passed = True
+            for validation in validation_queries:
+                try:
+                    result = self.client.query(validation["query"]).to_dataframe(create_bqstorage_client=False)
+                    
+                    if validation["name"] == "Check missing value percentage":
+                        # Special handling for missing value check
+                        total_rows = result['total_rows'].iloc[0]
+                        null_user_id = result['null_user_id'].iloc[0]
+                        null_book_id = result['null_book_id'].iloc[0]
+                        null_rating = result['null_rating'].iloc[0]
+                        
+                        user_id_missing_pct = null_user_id / total_rows if total_rows > 0 else 0
+                        book_id_missing_pct = null_book_id / total_rows if total_rows > 0 else 0
+                        rating_missing_pct = null_rating / total_rows if total_rows > 0 else 0
+                        
+                        if user_id_missing_pct > validation["max_allowed"]:
+                            self.logger.error(f"User ID missing percentage {user_id_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
+                            all_passed = False
+                        if book_id_missing_pct > validation["max_allowed"]:
+                            self.logger.error(f"Book ID missing percentage {book_id_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
+                            all_passed = False
+                        if rating_missing_pct > validation["max_allowed"]:
+                            self.logger.error(f"Rating missing percentage {rating_missing_pct:.2%} exceeds threshold {validation['max_allowed']:.2%}")
+                            all_passed = False
+                            
+                        self.logger.info(f"Missing value check - User ID: {user_id_missing_pct:.2%}, Book ID: {book_id_missing_pct:.2%}, Rating: {rating_missing_pct:.2%}")
+                    else:
+                        # Standard validation check
+                        invalid_count = result.iloc[0, 0]  # First column, first row
+                        if invalid_count > validation["max_allowed"]:
+                            self.logger.error(f"{validation['name']}: {invalid_count} violations found (max allowed: {validation['max_allowed']})")
+                            all_passed = False
+                        else:
+                            self.logger.info(f"{validation['name']}: PASSED ({invalid_count} violations)")
+                            
+                except Exception as e:
+                    self.logger.error(f"Error running validation '{validation['name']}': {e}")
+                    all_passed = False
             
-            # Add expectations based on actual table structure
-            for _, row in columns_info.iterrows():
-                col_name = row['column_name']
-                data_type = row['data_type']
-                
-                # Column existence
-                validator.expect_column_to_exist(col_name)
-                
-                # Data type expectations based on BigQuery types
-                if data_type in ('STRING', 'CHAR', 'TEXT'):
-                    validator.expect_column_values_to_be_of_type(col_name, "str")
-                elif data_type == 'INT64':
-                    validator.expect_column_values_to_be_of_type(col_name, "int64")
-                elif data_type == 'FLOAT64':
-                    validator.expect_column_values_to_be_of_type(col_name, "float64")
-                elif data_type == 'BOOL':
-                    validator.expect_column_values_to_be_of_type(col_name, "bool")
-            
-            # Business rule expectations for specific columns
-            if 'rating' in df.columns:
-                validator.expect_column_values_to_be_between("rating", min_value=0, max_value=5)
-            if 'book_id' in df.columns:
-                validator.expect_column_values_to_be_between("book_id", min_value=1)
-            
-            # Missing value expectations (allow some missing values)
-            for _, row in columns_info.iterrows():
-                col_name = row['column_name']
-                if col_name in df.columns:
-                    validator.expect_column_values_to_not_be_null(col_name, mostly=0.8)  # Allow 20% missing
-            
-            # Save expectations
-            validator.save_expectation_suite(discard_failed_expectations=False)
-            
-            # Create checkpoint
-            checkpoint = context.add_or_update_checkpoint(
-                name="interactions_checkpoint",
-                validations=[
-                    {
-                        "batch_request": batch_request,
-                        "expectation_suite_name": "interactions_expectations"
-                    }
-                ]
-            )
-            
-            # Run validation
-            checkpoint_result = checkpoint.run()
-            
-            if checkpoint_result["success"]:
+            if all_passed:
                 self.logger.info("Interactions table validation passed")
                 return True
             else:

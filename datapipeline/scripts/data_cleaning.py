@@ -1,8 +1,10 @@
 import os
 from google.cloud import bigquery
-from datapipeline.scripts.logger_setup import get_logger
+from logger_setup import get_logger
 import time
 from datetime import datetime
+from gender_guesser.detector import Detector
+from tqdm import tqdm
 
 class DataCleaning:
     
@@ -134,11 +136,56 @@ class DataCleaning:
         except Exception as e:
             self.logger.error(f"Error fetching sample data: {e}", exc_info=True)
             print("Books sample:")
+        self.create_author_gender_map()
         end_time = time.time()
         self.logger.info("=" * 60)
         self.logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.logger.info(f"Total runtime: {(end_time - start_time):.2f} seconds")
         self.logger.info("=" * 60)
+
+    # --- Load authors table from BigQuery ---
+    def create_author_gender_map(self):
+        """Generate and upload author gender mapping table to BigQuery."""
+        try:
+            self.logger.info("Starting gender mapping for authors...")
+
+            #Load authors table dynamically using project from GCP creds
+            query = f"""
+                SELECT author_id, name
+                FROM `{self.project_id}.books.goodreads_book_authors`
+                WHERE name IS NOT NULL
+            """
+            authors_df = self.client.query(query).to_dataframe()
+            self.logger.info(f"Retrieved {len(authors_df)} author rows.")
+
+            #Infer gender locally
+            detector = Detector(case_sensitive=False)
+
+            def get_gender(name):
+                if not name or '.' in name or len(name.split()) == 0:
+                    return "Unknown"
+                g = detector.get_gender(name.split()[0])
+                if g in ["male", "mostly_male"]:
+                    return "Male"
+                elif g in ["female", "mostly_female"]:
+                    return "Female"
+                else:
+                    return "Unknown"
+
+            tqdm.pandas(desc="Inferring author gender")
+            authors_df["author_gender_group"] = authors_df["name"].progress_apply(get_gender)
+
+            #Upload mapping back to BigQuery
+            table_id = f"{self.project_id}.books.goodreads_author_gender_map"
+            job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
+            job = self.client.load_table_from_dataframe(authors_df, table_id, job_config=job_config)
+            job.result()  # Wait for upload to complete
+            self.logger.info(f"Uploaded {len(authors_df)} rows to {table_id}")
+            self.logger.info("Uploaded gender map to books.goodreads_author_gender_map")
+
+        except Exception as e:
+            self.logger.error(f"Error creating author gender map: {e}", exc_info=True)
+
 
 def main():
     data_cleaner = DataCleaning()

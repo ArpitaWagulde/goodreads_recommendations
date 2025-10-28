@@ -1,5 +1,5 @@
 outs:
-- md5: 23b93f069b237460025811d65239730a
-  size: 3659
+- md5: 7407fa961d16d978d02474446c84ffa6
+  size: 3660
   hash: md5
   path: goodreads_features_metadata.json

@@ -25,6 +25,8 @@ Citations:
 
 ## Getting Started
 
+> **Note:** To run our project on Windows machine, ensure WSL is installed.
+
 ### 1. Clone the Repository
 
 ```bash

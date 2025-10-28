@@ -36,7 +36,7 @@ def send_failure_email(context):
     <p>DAG <b>{dag_id}</b> failed for task <b>{task_id}</b> on {execution_date}.</p>
     <p>Check logs: <a href="{log_url}">Click here</a></p>
     """
-    send_email(to="7d936ad4-351b-4493-99a7-110ed7b6b2f6@emailhook.site", subject=subject, html_content=html_content)
+    send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
 
 def send_success_email(context):
     dag_id = context.get('dag').dag_id
@@ -45,7 +45,7 @@ def send_success_email(context):
     html_content = f"""
     <p>DAG <b>{dag_id}</b> succeeded for execution date {execution_date}.</p>
     """
-    send_email(to="7d936ad4-351b-4493-99a7-110ed7b6b2f6@emailhook.site", subject=subject, html_content=html_content)
+    send_email(to=os.environ.get("AIRFLOW__SMTP__SMTP_USER"), subject=subject, html_content=html_content)
     
 def log_query_results(**kwargs):
     ti = kwargs['ti']
@@ -123,89 +123,90 @@ with DAG(
     
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("AIRFLOW_HOME")+"/gcp_credentials.json"
 
-    # start = EmptyOperator(task_id='start')
+    start = EmptyOperator(task_id='start')
 
-    # data_reading_task = BigQueryInsertJobOperator(
-    #     task_id='read_data_from_bigquery',
-    #     configuration={
-    #         "query": {
-    #             "query": """
-    #                 SELECT 
-    #                     'books' as table_type,
-    #                     COUNT(*) as record_count
-    #                 FROM `recommendation-system-475301.books.goodreads_books_mystery_thriller_crime`
-    #                 UNION ALL
-    #                 SELECT 
-    #                     'interactions' as table_type,
-    #                     COUNT(*) as record_count
-    #                 FROM `recommendation-system-475301.books.goodreads_interactions_mystery_thriller_crime`
-    #             """,
-    #             "useLegacySql": False,
-    #         }
-    #     },
-    #     gcp_conn_id='goodreads_conn',
-    # )
+    data_reading_task = BigQueryInsertJobOperator(
+        task_id='read_data_from_bigquery',
+        configuration={
+            "query": {
+                "query": """
+                    SELECT 
+                        'books' as table_type,
+                        COUNT(*) as record_count
+                    FROM `recommendation-system-475301.books.goodreads_books_mystery_thriller_crime`
+                    UNION ALL
+                    SELECT 
+                        'interactions' as table_type,
+                        COUNT(*) as record_count
+                    FROM `recommendation-system-475301.books.goodreads_interactions_mystery_thriller_crime`
+                """,
+                "useLegacySql": False,
+            }
+        },
+        gcp_conn_id='goodreads_conn',
+    )
 
-    # log_results_task = PythonOperator(
-    #     task_id='log_bq_results',
-    #     python_callable=log_query_results,
-    # )
+    log_results_task = PythonOperator(
+        task_id='log_bq_results',
+        python_callable=log_query_results,
+    )
     
-    # data_validation_task = PythonOperator(
-    #     task_id='validate_data_quality',
-    #     python_callable=main_pre_validation,
-    #     doc_md="""
-    #     ## Data Validation Task
-    #     Simple data quality checks:
-    #     - Required columns exist
-    #     - Data ranges are valid
-    #     - Missing values within limits
-    #     - Stops pipeline if critical issues found
-    #     """
-    # )
+    data_validation_task = PythonOperator(
+        task_id='validate_data_quality',
+        python_callable=main_pre_validation,
+        doc_md="""
+        ## Data Validation Task
+        Simple data quality checks:
+        - Required columns exist
+        - Data ranges are valid
+        - Missing values within limits
+        - Stops pipeline if critical issues found
+        """
+    )
 
-    # data_cleaning_task = PythonOperator(
-    #     task_id='clean_data',
-    #     python_callable=data_cleaning_run,
-    # )
+    data_cleaning_task = PythonOperator(
+        task_id='clean_data',
+        python_callable=data_cleaning_run,
+    )
     
-    # post_cleaning_validation_task = PythonOperator(
-    #     task_id='validate_cleaned_data',
-    #     python_callable=main_post_validation,
-    #     doc_md="""
-    #     ## Post-Cleaning Validation Task
-    #     Validates data quality after cleaning:
-    #     - Ensures cleaning process worked correctly
-    #     - Checks for any new data quality issues
-    #     - Validates cleaned data meets requirements
-    #     """
-    # )
+    post_cleaning_validation_task = PythonOperator(
+        task_id='validate_cleaned_data',
+        python_callable=main_post_validation,
+        doc_md="""
+        ## Post-Cleaning Validation Task
+        Validates data quality after cleaning:
+        - Ensures cleaning process worked correctly
+        - Checks for any new data quality issues
+        - Validates cleaned data meets requirements
+        """
+    )
      
 
-    # feature_engg_task = PythonOperator(
-    #     task_id='feature_engg_data',
-    #     python_callable=feature_engg_run,
-    # )
+    feature_engg_task = PythonOperator(
+        task_id='feature_engg_data',
+        python_callable=feature_engg_run,
+    )
     
-    # normalization_task = PythonOperator(
-    #     task_id='normalize_data',
-    #     python_callable= normalization_run,
-    # )
+    normalization_task = PythonOperator(
+        task_id='normalize_data',
+        python_callable= normalization_run,
+    )
 
-    # promote_staging_task = PythonOperator(
-    #     task_id='promote_staging_tables',
-    #     python_callable=promote_staging_main,
-    # )
+    promote_staging_task = PythonOperator(
+        task_id='promote_staging_tables',
+        python_callable=promote_staging_main,
+    )
 
     data_versioning_task = PythonOperator(
         task_id='data_versioning',
         python_callable=data_versioning_run,
     )
 
-    # end = EmptyOperator(task_id='end')
+    end = EmptyOperator(task_id='end')
 
     # start >> data_reading_task >> log_results_task >> data_validation_task >> data_cleaning_task
     # data_cleaning_task >> post_cleaning_validation_task >> feature_engg_task >> normalization_task
     # normalization_task >> promote_staging_task >> data_versioning_task >> end
 
-    # start >> data_reading_task >> log_results_task >> data_cleaning_task >> feature_engg_task >> normalization_task >> promote_staging_task >> data_versioning_task >> end
+    start >> data_reading_task >> log_results_task >> data_cleaning_task >> feature_engg_task >> normalization_task >> promote_staging_task >> data_versioning_task >> end
+

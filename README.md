@@ -322,11 +322,9 @@ SELECT COUNT(*) as invalid_count
 FROM `project.books.goodreads_books_cleaned_staging`
 WHERE title IS NULL 
    OR publication_year IS NULL 
-   OR publication_year < 1000 
-   OR publication_year > 2030
+   OR publication_year <= 0 
    OR num_pages IS NULL 
-   OR num_pages <= 0 
-   OR num_pages > 10000
+   OR num_pages <= 0
 ```
 
 **Interactions Table Validation:**
@@ -365,6 +363,10 @@ The validation system integrates with the Airflow DAG at two critical points:
 2. **Post-cleaning** (`validate_cleaned_data` task): Validates cleaned data before feature engineering
 
 This ensures data quality gates at both ends of the cleaning process, preventing bad data from propagating through the ML pipeline and ensuring the final dataset meets the requirements for recommendation system training.
+
+### **Bottleneck Identification**
+
+Initially, the data was fetched as JSON files and processed locally. However, as the dataset was much large, the pipeline became increasingly slow and resource-intensive. To improve scalability and performance, we restructured the pipeline to store data in Google Cloud Storage and load it into BigQuery tables. This allows us to perform transformations and processing directly through SQL queries in BigQuery, significantly enhancing the efficiency of the data pipeline.
 
 ### Configuration & Environment
 
@@ -471,10 +473,40 @@ This section highlights key findings from our exploratory data analysis and bias
 
 ### Project Visuals [(assets/)](https://github.com/purva-agarwal/goodreads_recommendations/blob/master/assets)
 
-<div style="display: flex; overflow-x: auto; gap: 12px; padding: 10px; white-space: nowrap;">
-  <img src="assets/db_tables_gcp.png" alt="DB Tables on GCP" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/DAG_task_instances.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/DAG_task.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/email_alerts.jpg" alt="Email Alerts" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/gnatt_chart.jpg" alt="Gantt Chart" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
+<div>
+  <p align="center">
+    <img src="assets/db_tables_gcp.png" alt="DB Tables on GCP" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DB Tables on GCP</em>
+  </p>
+
+  <p align="center">
+    <img src="assets/DAG_task_instances.jpg" alt="DAG Task Instances" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DAG Task Instances</em>
+  </p>
+
+  <p align="center">
+    <img src="assets/DAG_task.jpg" alt="DAG Task" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DAG Task Details</em>
+  </p>
+
+  <p align="center">
+    <img src="assets/email_alerts.jpg" alt="Email Alerts" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>Email Alerts (Notifications)</em>
+  </p>
+
+  <p align="center">
+    <img src="assets/gnatt_chart.jpg" alt="Gantt Chart" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>Gantt Chart (Pipeline Schedule)</em>
+  </p>
+
+  <p align="center">
+    <img src="assets/DVC.png" alt="DVC" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DVC</em>
+  </p>
 </div>

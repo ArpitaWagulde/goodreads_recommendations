@@ -14,3 +14,4 @@ goodreads_recommendations.egg-info
 data/sample_features/
 
 **/logs/
+.DS_Store

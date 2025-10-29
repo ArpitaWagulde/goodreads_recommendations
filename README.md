@@ -322,11 +322,9 @@ SELECT COUNT(*) as invalid_count
 FROM `project.books.goodreads_books_cleaned_staging`
 WHERE title IS NULL 
    OR publication_year IS NULL 
-   OR publication_year < 1000 
-   OR publication_year > 2030
+   OR publication_year <= 0 
    OR num_pages IS NULL 
-   OR num_pages <= 0 
-   OR num_pages > 10000
+   OR num_pages <= 0
 ```
 
 **Interactions Table Validation:**
@@ -365,6 +363,10 @@ The validation system integrates with the Airflow DAG at two critical points:
 2. **Post-cleaning** (`validate_cleaned_data` task): Validates cleaned data before feature engineering
 
 This ensures data quality gates at both ends of the cleaning process, preventing bad data from propagating through the ML pipeline and ensuring the final dataset meets the requirements for recommendation system training.
+
+### **Bottleneck Identification**
+
+Initially, the data was fetched as JSON files and processed locally. However, as the dataset was much large, the pipeline became increasingly slow and resource-intensive. To improve scalability and performance, we restructured the pipeline to store data in Google Cloud Storage and load it into BigQuery tables. This allows us to perform transformations and processing directly through SQL queries in BigQuery, significantly enhancing the efficiency of the data pipeline.
 
 ### Configuration & Environment
 

@@ -471,10 +471,34 @@ This section highlights key findings from our exploratory data analysis and bias
 
 ### Project Visuals [(assets/)](https://github.com/purva-agarwal/goodreads_recommendations/blob/master/assets)
 
-<div style="display: flex; overflow-x: auto; gap: 12px; padding: 10px; white-space: nowrap;">
-  <img src="assets/db_tables_gcp.png" alt="DB Tables on GCP" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/DAG_task_instances.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/DAG_task.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/email_alerts.jpg" alt="Email Alerts" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
-  <img src="assets/gnatt_chart.jpg" alt="Gantt Chart" style="height: 180px; object-fit: contain; border-radius: 8px;"/>
+<div style="display: block; padding: 10px;">
+  <figure style="margin:12px 0; text-align:center; width:100%;">
+    <img src="assets/db_tables_gcp.png" alt="DB Tables on GCP" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
+    <figcaption>DB Tables on GCP</figcaption>
+  </figure>
+
+  <figure style="margin:12px 0; text-align:center; width:100%;">
+    <img src="assets/DAG_task_instances.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
+    <figcaption>DAG Task Instances</figcaption>
+  </figure>
+
+  <figure style="margin:12px 0; text-align:center; width:100%;">
+    <img src="assets/DAG_task.jpg" alt="DAG Task" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
+    <figcaption>DAG Task Details</figcaption>
+  </figure>
+
+  <figure style="margin:12px 0; text-align:center; width:100%;">
+    <img src="assets/email_alerts.jpg" alt="Email Alerts" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
+    <figcaption>Email Alerts (Notifications)</figcaption>
+  </figure>
+
+  <figure style="margin:12px 0; text-align:center; width:100%;">
+    <img src="assets/gnatt_chart.jpg" alt="Gantt Chart" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
+    <figcaption>Gantt Chart (Pipeline Schedule)</figcaption>
+  </figure>
+
+  <figure style="margin:12px 0; text-align:center; width:100%;">
+    <img src="assets/DVC.png" alt="Gantt Chart" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
+    <figcaption>DVC</figcaption>
+  </figure>
 </div>

@@ -471,34 +471,40 @@ This section highlights key findings from our exploratory data analysis and bias
 
 ### Project Visuals [(assets/)](https://github.com/purva-agarwal/goodreads_recommendations/blob/master/assets)
 
-<div style="display: block; padding: 10px;">
-  <figure style="margin:12px 0; text-align:center; width:100%;">
-    <img src="assets/db_tables_gcp.png" alt="DB Tables on GCP" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
-    <figcaption>DB Tables on GCP</figcaption>
-  </figure>
+<div>
+  <p align="center">
+    <img src="assets/db_tables_gcp.png" alt="DB Tables on GCP" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DB Tables on GCP</em>
+  </p>
 
-  <figure style="margin:12px 0; text-align:center; width:100%;">
-    <img src="assets/DAG_task_instances.jpg" alt="DAG Task Instances" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
-    <figcaption>DAG Task Instances</figcaption>
-  </figure>
+  <p align="center">
+    <img src="assets/DAG_task_instances.jpg" alt="DAG Task Instances" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DAG Task Instances</em>
+  </p>
 
-  <figure style="margin:12px 0; text-align:center; width:100%;">
-    <img src="assets/DAG_task.jpg" alt="DAG Task" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
-    <figcaption>DAG Task Details</figcaption>
-  </figure>
+  <p align="center">
+    <img src="assets/DAG_task.jpg" alt="DAG Task" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DAG Task Details</em>
+  </p>
 
-  <figure style="margin:12px 0; text-align:center; width:100%;">
-    <img src="assets/email_alerts.jpg" alt="Email Alerts" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
-    <figcaption>Email Alerts (Notifications)</figcaption>
-  </figure>
+  <p align="center">
+    <img src="assets/email_alerts.jpg" alt="Email Alerts" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>Email Alerts (Notifications)</em>
+  </p>
 
-  <figure style="margin:12px 0; text-align:center; width:100%;">
-    <img src="assets/gnatt_chart.jpg" alt="Gantt Chart" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
-    <figcaption>Gantt Chart (Pipeline Schedule)</figcaption>
-  </figure>
+  <p align="center">
+    <img src="assets/gnatt_chart.jpg" alt="Gantt Chart" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>Gantt Chart (Pipeline Schedule)</em>
+  </p>
 
-  <figure style="margin:12px 0; text-align:center; width:100%;">
-    <img src="assets/DVC.png" alt="Gantt Chart" style="height: 180px; object-fit: contain; border-radius: 8px; display:block; margin: 0 auto;"/>
-    <figcaption>DVC</figcaption>
-  </figure>
+  <p align="center">
+    <img src="assets/DVC.png" alt="DVC" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <br/>
+    <em>DVC</em>
+  </p>
 </div>

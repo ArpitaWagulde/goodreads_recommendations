@@ -485,7 +485,7 @@ This section highlights key findings from our exploratory data analysis and bias
   </p>
 
   <p align="center">
-    <img src="assets/DAG_task.jpeg" alt="DAG Task" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
+    <img src="assets/DAG_task.jpg" alt="DAG Task" style="max-width:600px; width:100%; height:auto; border-radius:8px;" />
     <br/>
     <em>DAG Task Details</em>
   </p>

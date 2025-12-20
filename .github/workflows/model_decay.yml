@@ -1,8 +1,8 @@
 name: Monitor Model Decay
 
 on:
-  schedule:
-    - cron: '0 8 * * *' # every day at midnight PST (8 AM UTC)
+  # schedule:
+    # - cron: '0 8 * * *' # every day at midnight PST (8 AM UTC)
   workflow_dispatch: {}
 
 permissions:

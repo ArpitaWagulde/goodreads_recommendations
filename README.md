@@ -4,6 +4,8 @@ This project builds a machine learning-based book recommendation system using Go
 
 We have implemented Click Through Rate which makes our static data dynamic, where we monitor the click to view ratio per user for the recommendations provided to identify the model decay and data drift and then use this new data with the old to retrain the model.
 
+[Application Link](https://recommendation-frontend-491512947755.us-central1.run.app/)
+
 <div>
   <p align="center">
     <img src="assets/ReadMate.png" alt="Docker Sample" style="max-width:900px; width:100%; height:auto; border-radius:8px;" />
